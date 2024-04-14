@@ -1,4 +1,4 @@
-package server.editor.commands;
+package server.editor;
 
 import lombok.Data;
 import org.apache.commons.csv.CSVFormat;

@@ -1,4 +1,4 @@
-package server.editor.commands;
+package logging;
 
 import java.io.FileWriter;
 import java.io.IOException;

@@ -1,7 +1,9 @@
-package server.editor.commands;
+package server.editor;
 
 
 import lombok.Data;
+import server.editor.commands.*;
+
 import java.util.List;
 
 @Data

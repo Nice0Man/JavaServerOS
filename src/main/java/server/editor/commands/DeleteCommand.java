@@ -1,7 +1,10 @@
 package server.editor.commands;
 
+import server.editor.CSVApp;
+import server.editor.CSVEditor;
+
 // Конкретная команда для удаления записи из CSV файла
-class DeleteCommand extends Command {
+public class DeleteCommand extends Command {
     private final int rowIndex;
 
     public DeleteCommand(CSVApp csvApp, CSVEditor activeEditor, int rowIndex) {

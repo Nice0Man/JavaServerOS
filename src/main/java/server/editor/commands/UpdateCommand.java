@@ -1,7 +1,10 @@
 package server.editor.commands;
 
+import server.editor.CSVApp;
+import server.editor.CSVEditor;
+
 // Конкретная команда для обновления записи в CSV файле
-class UpdateCommand extends Command {
+public class UpdateCommand extends Command {
     private final int rowIndex;
     private final String[] strings;
 

@@ -1,7 +1,10 @@
 package server.editor.commands;
 
+import server.editor.CSVApp;
+import server.editor.CSVEditor;
+
 // Конкретная команда для добавления записи в CSV файл
-class CreateCommand extends Command {
+public class CreateCommand extends Command {
     private final String[] strings;
 
     public CreateCommand(CSVApp csvApp, CSVEditor csvEditor, String[] strings) {
