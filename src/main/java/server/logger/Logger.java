@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 
 /**
  * Класс для логирования методов с аннотацией ServerLogging.
@@ -35,7 +36,10 @@ public class Logger {
                 if (method.isAnnotationPresent(ServerLogging.class)) {
                     ServerLogging annotation = method.getAnnotation(ServerLogging.class);
                     if (annotation.value() != null && !annotation.value().isEmpty()) {
-                        String logEntry = timestamp + " - " + "Метод: " + method.getName() + ", Аннотация: " + annotation.value();
+                        String logEntry = timestamp + " - " +
+                                        "Annotation: " + annotation.value() +
+                                        ", Method: " + method.getName() +
+                                        ", Parameters: " + Arrays.toString(method.getParameters());
                         writer.println(logEntry);
                     }
                 }
