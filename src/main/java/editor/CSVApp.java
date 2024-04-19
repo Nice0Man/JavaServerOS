@@ -1,6 +1,7 @@
-package server.editor;
+package editor;
 
 
+import editor.commands.*;
 import lombok.Data;
 import server.editor.commands.*;
 
@@ -20,7 +21,6 @@ public class CSVApp {
             System.out.println();
         });
     }
-
     public void create(String[] strings){
         executeCommand(new CreateCommand(this, activeEditor, strings));
     }

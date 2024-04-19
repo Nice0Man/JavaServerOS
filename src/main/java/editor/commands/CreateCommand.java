@@ -1,7 +1,7 @@
-package server.editor.commands;
+package editor.commands;
 
-import server.editor.CSVApp;
-import server.editor.CSVEditor;
+import editor.CSVApp;
+import editor.CSVEditor;
 
 // Конкретная команда для добавления записи в CSV файл
 public class CreateCommand extends Command {
@@ -13,7 +13,7 @@ public class CreateCommand extends Command {
     }
 
     @Override
-    public boolean execute() {
+    public boolean execute(){
         saveBackup();
         csvEditor.createData(strings);
         return true;

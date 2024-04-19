@@ -1,4 +1,4 @@
-package server.editor.commands;
+package editor.commands;
 
 import java.util.Stack;
 

@@ -1,6 +1,6 @@
-package server.editor;
+package editor;
 
-import server.editor.commands.CommandHistory;
+import editor.commands.CommandHistory;
 
 public class Main {
     public static void main(String[] args) {

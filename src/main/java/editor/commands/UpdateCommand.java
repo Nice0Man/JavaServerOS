@@ -1,7 +1,7 @@
-package server.editor.commands;
+package editor.commands;
 
-import server.editor.CSVApp;
-import server.editor.CSVEditor;
+import editor.CSVApp;
+import editor.CSVEditor;
 
 // Конкретная команда для обновления записи в CSV файле
 public class UpdateCommand extends Command {

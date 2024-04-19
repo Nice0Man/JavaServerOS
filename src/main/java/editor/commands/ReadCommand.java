@@ -1,8 +1,8 @@
-package server.editor.commands;
+package editor.commands;
 
 
-import server.editor.CSVApp;
-import server.editor.CSVEditor;
+import editor.CSVApp;
+import editor.CSVEditor;
 
 // Конкретная команда для чтения данных из CSV файла
 public class ReadCommand extends Command {
