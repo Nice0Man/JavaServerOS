@@ -1,8 +1,10 @@
 package models;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
+import server.models.DataModel;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -63,7 +65,7 @@ class DataModelTest {
     @Test
     void test_can_equal() {
         DataModel data = new DataModel(1, "Test Text", LocalDateTime.now());
-        assertTrue(data.canEqual(new DataModel(1, "Test Text", LocalDateTime.now())));
+        assertEquals(data, new DataModel(1, "Test Text", LocalDateTime.now()));
     }
 
     @Test
@@ -97,6 +99,25 @@ class DataModelTest {
             assertEquals("Sample text", dataModel.getText());
             assertEquals(LocalDateTime.parse("2022-04-09T12:30:00"), dataModel.getTime());
         } catch (IOException e) {
+            fail("Exception occurred: " + e.getMessage());
+        }
+    }
+
+    @Test
+    void test_class_to_json_conversion() {
+        // Создание объекта DataModel
+        DataModel dataModel = new DataModel(1, "Sample text", LocalDateTime.parse("2022-04-09T12:30:00"));
+        // Создание объекта ObjectMapper для преобразования объекта Java в JSON
+        ObjectMapper objectMapper = new ObjectMapper();
+        // Добавление модуля поддержки Java 8 Date/Time API
+        objectMapper.registerModule(new JavaTimeModule());
+        try {
+            // Преобразование объекта DataModel в JSON
+            String json = objectMapper.writeValueAsString(dataModel);
+            // Проверка правильности преобразования
+            String expectedJson = "{\"id\":1,\"text\":\"Sample text\",\"time\":\"2022-04-09T12:30:00\"}";
+            assertEquals(expectedJson, json);
+        } catch (JsonProcessingException e) {
             fail("Exception occurred: " + e.getMessage());
         }
     }
