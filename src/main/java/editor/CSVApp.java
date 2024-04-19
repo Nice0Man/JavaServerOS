@@ -3,7 +3,7 @@ package editor;
 
 import editor.commands.*;
 import lombok.Data;
-import server.editor.commands.*;
+import editor.commands.*;
 
 import java.util.List;
 
