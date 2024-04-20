@@ -1,9 +1,5 @@
 package server.logger;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -11,15 +7,35 @@ import java.lang.reflect.Method;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.MissingResourceException;
 
 /**
  * Класс для логирования методов с аннотацией ServerLogging.
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class Logger {
+public class Logger extends java.util.logging.Logger {
     private String filePath = "server.log"; // Путь к файлу журнала
+
+    /**
+     * Protected method to construct a logger for a named subsystem.
+     * <p>
+     * The logger will be initially configured with a null Level
+     * and with useParentHandlers set to true.
+     *
+     * @param name               A name for the logger.  This should
+     *                           be a dot-separated name and should normally
+     *                           be based on the package name or class name
+     *                           of the subsystem, such as java.net
+     *                           or javax.swing.  It may be null for anonymous Loggers.
+     * @param resourceBundleName name of ResourceBundle to be used for localizing
+     *                           messages for this logger.  May be null if none
+     *                           of the messages require localization.
+     * @throws MissingResourceException if the resourceBundleName is non-null and
+     *                                  no corresponding resource can be found.
+     */
+    protected Logger(String name, String resourceBundleName) {
+        super(name, resourceBundleName);
+    }
+
     /**
      * Метод для логирования методов объекта с аннотацией ServerLogging.
      *

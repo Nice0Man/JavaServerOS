@@ -5,7 +5,7 @@ This project aims to develop a distributed system for processing structured reco
 ## Features
 
 - **Server**: The main server component responsible for handling client connections and processing their requests.
-- **Client Handling**: Each client connection is managed by a separate thread to enable concurrent request processing.
+- **test.Client Handling**: Each client connection is managed by a separate thread to enable concurrent request processing.
 - **Record Database**: Provides functionality for accessing and manipulating records stored in a flat file.
 - **Supported Operations**: The server supports operations such as reading, deleting, adding, and updating records.
 
