@@ -13,11 +13,12 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-abstract class RunnableApplication implements Serializable {
+
+public class ApplicationEntryPoint implements Serializable {
     private static Logger logger;
 
-    public static void setUp(Object object, String[] args){
-        logger = LogManager.getLogger(RunnableApplication.class);
+    public static void setUp(String[] args){
+        logger = LogManager.getLogger(ApplicationEntryPoint.class);
         try {
             Config.getInstance();
         } catch (IOException e1) {
@@ -44,8 +45,8 @@ abstract class RunnableApplication implements Serializable {
         }
     }
 
-    public static void run(Object object, String[] args) {
-        setUp(object, args);
+    public static void runApp(String[] args) {
+        setUp(args);
         ExecutorService requestHandler = Executors.newFixedThreadPool(Config.WORKER_THREADS);
 
         try {
