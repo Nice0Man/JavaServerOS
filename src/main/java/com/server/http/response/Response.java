@@ -1,4 +1,4 @@
-package server.http.response;
+package com.server.http.response;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -8,13 +8,13 @@ import java.text.SimpleDateFormat;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import server.http.models.HttpHeader;
-import server.http.status.HTTP_STATUS_CODE;
+import com.server.http.models.HttpHeader;
+import com.server.http.status.HTTP_STATUS_CODE;
 
 /**
  * Builds HTTP responses
  *
- * @author tomiwa
+ * @author Nice0Man
  *
  */
 public class Response {

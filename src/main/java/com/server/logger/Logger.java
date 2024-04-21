@@ -1,4 +1,4 @@
-package server.logger;
+package com.server.logger;
 
 import java.io.FileWriter;
 import java.io.IOException;

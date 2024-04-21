@@ -1,10 +1,8 @@
-package server.http.models;
+package com.server.http.models;
 
 import lombok.Data;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 @Data
 public class HttpHeader {

@@ -1,4 +1,4 @@
-package server.http.models;
+package com.server.http.models;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -1,6 +1,5 @@
-package server.util;
+package com.server.util;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -19,7 +18,7 @@ public final class Config {
     public static int CONNECTION_QUEUE;
 
 
-    private static final String CONFIG_FILE_PATH = "src/main/resources/config.properties";
+    private static final String CONFIG_FILE_PATH = "src/main/resources/configs/config.properties";
     private static final Properties properties = new Properties();
     private static Config instance;
 

@@ -1,4 +1,4 @@
-package server.http.models;
+package com.server.http.models;
 
 import lombok.Getter;
 

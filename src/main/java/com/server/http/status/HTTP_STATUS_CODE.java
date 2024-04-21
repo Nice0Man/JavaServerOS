@@ -1,4 +1,4 @@
-package server.http.status;
+package com.server.http.status;
 
 import lombok.Getter;
 

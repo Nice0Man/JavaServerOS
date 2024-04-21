@@ -1,17 +1,16 @@
-package server.endpoints;
+package endpoints;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Base64;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
-import server.http.models.HttpHeader;
-import server.http.status.HTTP_STATUS_CODE;
-import server.util.Config;
+import com.server.http.models.HttpHeader;
+import com.server.http.status.HTTP_STATUS_CODE;
+import com.server.util.Config;
 
 /**
  * Handles HTTP basic authentication

@@ -1,4 +1,4 @@
-package server.http.request;
+package com.server.http.request;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -8,14 +8,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
 
+import com.server.http.response.Response;
+import com.server.http.status.HTTP_STATUS_CODE;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import server.http.response.Response;
-import server.http.status.HTTP_STATUS_CODE.*;
-import server.util.Config;
-
-import static server.http.status.HTTP_STATUS_CODE.*;
+import com.server.util.Config;
 
 
 /**
@@ -66,20 +64,20 @@ public class Handler implements Runnable {
                             offset += count;
                         }
                         i.close();
-                        logger.info("{}: (200) {}", uri, OK_200);
-                        response = new Response(OK_200, this.socket, bytes, true);
+                        logger.info("{}: (200) {}", uri, HTTP_STATUS_CODE.OK_200);
+                        response = new Response(HTTP_STATUS_CODE.OK_200, this.socket, bytes, true);
                         response.responseView();
                     } else if (file.isDirectory()) {
                         directoryListing(uri, file);
                     } else {
-                        logger.error("{}: (404) {}", uri, NOT_FOUND_404);
-                        response = new Response(NOT_FOUND_404, this.socket);
+                        logger.error("{}: (404) {}", uri, HTTP_STATUS_CODE.NOT_FOUND_404);
+                        response = new Response(HTTP_STATUS_CODE.NOT_FOUND_404, this.socket);
                         response.responseView();
                     }
                 }
             } else {
-                logger.error("{}: (405) {}", requestMethod.toUpperCase(), METHOD_NOT_ALLOWED_405);
-                response = new Response(METHOD_NOT_ALLOWED_405, this.socket);
+                logger.error("{}: (405) {}", requestMethod.toUpperCase(), HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405);
+                response = new Response(HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405, this.socket);
                 response.responseView();
             }
             in.close();
@@ -106,9 +104,8 @@ public class Handler implements Runnable {
             }
         }
         output.append("<hr></pre></body></html>");
-        logger.info("{}: (200) {}", uri, OK_200);
-        response = new Response(OK_200, this.socket, output, false);
+        logger.info("{}: (200) {}", uri, HTTP_STATUS_CODE.OK_200);
+        response = new Response(HTTP_STATUS_CODE.OK_200, this.socket, output, false);
         response.responseView();
     }
-
 }
