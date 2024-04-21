@@ -57,7 +57,7 @@ docker build -t record-processing-server .
 ```
 2. Run the Docker container:
 ```bash
-docker run -p 8080:8080 record-processing-server
+docker main -p 8080:8080 record-processing-server
 ```
 
 ## Configuration

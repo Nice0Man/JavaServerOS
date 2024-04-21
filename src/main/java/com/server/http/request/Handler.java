@@ -6,8 +6,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.util.Objects;
 
+import com.server.http.request.annotations.HTTP_METHOD;
 import com.server.http.response.Response;
 import com.server.http.status.HTTP_STATUS_CODE;
 import org.apache.logging.log4j.LogManager;
@@ -33,7 +37,31 @@ public class Handler implements Runnable {
 
     @Override
     public void run() {
-        processRequest(this.socket);
+        processRequest();
+    }
+
+    /**
+     * Build the response header and body
+     *
+     */
+    private void processRequest() {
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
+            String line = in.readLine();
+            logger.info(line);
+            String requestMethod = line.split("\\s+")[0];
+            String uri = line.split("\\s+")[1];
+            EndpointMapper.handleRequest(uri, HTTP_METHOD.getMethod(requestMethod));
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            logger.error("Error processing request: {}", e.getMessage());
+        } catch (IOException e) {
+            e.printStackTrace(System.err);
+        }
+    }
+
+    private void sendErrorResponse(HTTP_STATUS_CODE statusCode) throws IOException {
+        Response response = new Response(statusCode, socket);
+        response.responseView();
     }
 
     /**
@@ -41,50 +69,50 @@ public class Handler implements Runnable {
      *
      * @param s The incoming connection object
      */
-    public void processRequest(Socket s) {
-        try {
-            BufferedReader in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-            String line = in.readLine();
-            logger.info(line);
-            String requestMethod = line.split("\\s+")[0];
-            if(requestMethod.equalsIgnoreCase(Config.METHODS.GET.toString())) {
-                String uri = line.split("\\s+")[1];
-                if(uri.equals("/")) {
-                    File file = new File(".");
-                    directoryListing(uri, file);
-                } else {
-                    File file = new File(uri.substring(1));
-                    if(file.exists()) {
-                        int length = (int) file.length();
-                        byte[] bytes = new byte[length];
-                        InputStream i = new FileInputStream(file);
-                        int offset = 0;
-                        while (offset < length) {
-                            int count = i.read(bytes, offset, (length - offset));
-                            offset += count;
-                        }
-                        i.close();
-                        logger.info("{}: (200) {}", uri, HTTP_STATUS_CODE.OK_200);
-                        response = new Response(HTTP_STATUS_CODE.OK_200, this.socket, bytes, true);
-                        response.responseView();
-                    } else if (file.isDirectory()) {
-                        directoryListing(uri, file);
-                    } else {
-                        logger.error("{}: (404) {}", uri, HTTP_STATUS_CODE.NOT_FOUND_404);
-                        response = new Response(HTTP_STATUS_CODE.NOT_FOUND_404, this.socket);
-                        response.responseView();
-                    }
-                }
-            } else {
-                logger.error("{}: (405) {}", requestMethod.toUpperCase(), HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405);
-                response = new Response(HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405, this.socket);
-                response.responseView();
-            }
-            in.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+//    public void processRequest(Socket s) {
+//        try {
+//            BufferedReader in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
+//            String line = in.readLine();
+//            logger.info(line);
+//            String requestMethod = line.split("\\s+")[0];
+//            if(requestMethod.equalsIgnoreCase(Config.METHODS.GET.toString())) {
+//                String uri = line.split("\\s+")[1];
+//                if(uri.equals("/")) {
+//                    File file = new File(".");
+//                    directoryListing(uri, file);
+//                } else {
+//                    File file = new File(uri.substring(1));
+//                    if(file.exists()) {
+//                        int length = (int) file.length();
+//                        byte[] bytes = new byte[length];
+//                        InputStream i = Files.newInputStream(file.toPath());
+//                        int offset = 0;
+//                        while (offset < length) {
+//                            int count = i.read(bytes, offset, (length - offset));
+//                            offset += count;
+//                        }
+//                        i.close();
+//                        logger.info("{}: (200) {}", uri, HTTP_STATUS_CODE.OK_200);
+//                        response = new Response(HTTP_STATUS_CODE.OK_200, this.socket, bytes, true);
+//                        response.responseView();
+//                    } else if (file.isDirectory()) {
+//                        directoryListing(uri, file);
+//                    } else {
+//                        logger.error("{}: (404) {}", uri, HTTP_STATUS_CODE.NOT_FOUND_404);
+//                        response = new Response(HTTP_STATUS_CODE.NOT_FOUND_404, this.socket);
+//                        response.responseView();
+//                    }
+//                }
+//            } else {
+//                logger.error("{}: (405) {}", requestMethod.toUpperCase(), HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405);
+//                response = new Response(HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405, this.socket);
+//                response.responseView();
+//            }
+//            in.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     /**
      * List files and directories contained in the requested URI

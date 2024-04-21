@@ -7,6 +7,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Delete {
-    String value() default "";
+public @interface EndpointMapping {
+    String uri() default "/";
+    HTTP_METHOD method() default HTTP_METHOD.GET;
 }

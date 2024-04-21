@@ -17,7 +17,6 @@ import com.server.util.Config;
  *
  */
 public class Listener {
-
     @Getter
     private static final Listener instance = new Listener();
     private static final BlockingQueue<Socket> connectionQueue = new ArrayBlockingQueue<>(Config.CONNECTION_QUEUE);
@@ -26,12 +25,12 @@ public class Listener {
     /**
      * Adds request to connection buffer
      *
-     * @param s Incoming connection
+     * @param socket Incoming connection
      */
-    public void addRequestToQueue(Socket s) {
+    public void addRequestToQueue(Socket socket) {
         try {
-            logger.info("New connection from {} added to connection queue", s.getRemoteSocketAddress());
-            connectionQueue.put(s);
+            logger.info("New connection from {} added to connection queue", socket.getRemoteSocketAddress());
+            connectionQueue.put(socket);
         } catch (InterruptedException e) {
             e.printStackTrace(System.err);
         }
@@ -44,9 +43,9 @@ public class Listener {
      */
     public Socket handleRequest() {
         try {
-            Socket s = connectionQueue.take();
-            logger.info("Processing {}", s.getRemoteSocketAddress());
-            return s;
+            Socket taken = connectionQueue.take();
+            logger.info("Processing {}", taken.getRemoteSocketAddress());
+            return taken;
         } catch (InterruptedException e) {
             e.printStackTrace(System.err);
             return null;
