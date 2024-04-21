@@ -73,5 +73,11 @@
           <artifactId>log4j-core</artifactId>
           <version>2.23.1</version>
       </dependency>
+      <!-- https://mvnrepository.com/artifact/at.favre.lib/bcrypt -->
+      <dependency>
+          <groupId>at.favre.lib</groupId>
+          <artifactId>bcrypt</artifactId>
+          <version>0.10.2</version>
+      </dependency>
   </dependencies>
 </project>

@@ -2,7 +2,7 @@ package server;
 
 import lombok.Data;
 import lombok.Setter;
-import server.http.status.HttpStatusCode;
+import server.http.status.HTTP_STATUS_CODE;
 import server.logger.Logger;
 import server.http.models.HttpHeader;
 
@@ -12,7 +12,7 @@ import java.util.Map;
 
 @Data
 public class RequestHandler {
-    private static final String CRLF = "\r\n";
+/*    private static final String CRLF = "\r\n";
     @Setter
     private Logger LOGGER;
 
@@ -64,7 +64,7 @@ public class RequestHandler {
                     break;
                 default:
                     System.err.println("Method: " + method + " not allowed!");
-                    handleError(HttpStatusCode.METHOD_NOT_ALLOWED_405, "text/plain", "Unsupported method: " + method);
+                    handleError(HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405, "text/plain", "Unsupported method: " + method);
                     break; // Added missing break statement
             }
         } catch (IOException e) {
@@ -74,34 +74,34 @@ public class RequestHandler {
 
     private void handleGetMethod(String path, Map<HttpHeader, String> headers) throws IOException {
         // Placeholder for handling GET requests
-        sendResponse(HttpStatusCode.OK_200, "text/html", "<html><body><h1>Hello from JavaServer!</h1></body></html>");
+        sendResponse(HTTP_STATUS_CODE.OK_200, "text/html", "<html><body><h1>Hello from JavaServer!</h1></body></html>");
     }
 
     private void handlePostMethod(String path, BufferedReader reader, Map<HttpHeader, String> headers) throws IOException {
         // Placeholder for handling POST requests
-        sendResponse(HttpStatusCode.OK_200, "text/plain", "POST request received for path: " + path);
+        sendResponse(HTTP_STATUS_CODE.OK_200, "text/plain", "POST request received for path: " + path);
     }
 
     private void handlePutMethod(String path, BufferedReader reader, Map<HttpHeader, String> headers) throws IOException {
         // Placeholder for handling PUT requests
-        sendResponse(HttpStatusCode.OK_200, "text/plain", "PUT request received for path: " + path);
+        sendResponse(HTTP_STATUS_CODE.OK_200, "text/plain", "PUT request received for path: " + path);
     }
 
     private void handleDeleteMethod(String path, BufferedReader reader, Map<HttpHeader, String> headers) throws IOException {
         // Placeholder for handling DELETE requests
-        sendResponse(HttpStatusCode.OK_200, "text/plain", "DELETE request received for path: " + path);
+        sendResponse(HTTP_STATUS_CODE.OK_200, "text/plain", "DELETE request received for path: " + path);
     }
 
-    private void handleError(HttpStatusCode statusCode, String contentType, String responseBody) throws IOException {
+    private void handleError(HTTP_STATUS_CODE statusCode, String contentType, String responseBody) throws IOException {
         sendResponse(statusCode, contentType, responseBody);
     }
 
-    protected void sendResponse(HttpStatusCode statusCode, String responseBody) throws IOException{
+    protected void sendResponse(HTTP_STATUS_CODE statusCode, String responseBody) throws IOException{
             String contentType = "text/html";
             sendResponse(statusCode,contentType, responseBody);
         }
 
-    public void sendResponse(HttpStatusCode statusCode, String contentType, String responseBody) throws IOException {
+    public void sendResponse(HTTP_STATUS_CODE statusCode, String contentType, String responseBody) throws IOException {
         String response = HttpHeader.HTTP_VERSION.createHeader(statusCode.getCode() + " " + statusCode.getText()) + CRLF +
                 HttpHeader.SERVER.createHeader("JavaServer/2024") + CRLF +
                 HttpHeader.CONTENT_TYPE.createHeader(contentType) + CRLF +
@@ -111,6 +111,6 @@ public class RequestHandler {
                 responseBody;
         outputStream.write(response.getBytes());
         outputStream.flush();
-    }
+    }*/
 }
 

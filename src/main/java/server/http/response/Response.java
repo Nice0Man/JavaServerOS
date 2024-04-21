@@ -5,10 +5,11 @@ import java.io.IOException;
 import java.net.Socket;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import server.http.models.HttpHeader;
+import server.http.status.HTTP_STATUS_CODE;
 
 /**
  * Builds HTTP responses
@@ -17,28 +18,28 @@ import org.apache.logging.log4j.Logger;
  *
  */
 public class Response {
-
     private byte[] bytes;
     private boolean isFile;
-    private int statusCode;
-    private Socket socket;
+    private final HTTP_STATUS_CODE statusCode;
+    private final Socket socket;
     private StringBuilder output;
-    private ArrayList<String> headers = new ArrayList<String>();
+    private HttpHeader headers;
+    private static final String CRLF = "\r\n";
     private static final Logger logger = LogManager.getLogger(Response.class);
 
-    public Response(int statusCode, Socket socket) {
+    public Response(HTTP_STATUS_CODE statusCode, Socket socket) {
         this.statusCode = statusCode;
         this.socket = socket;
     }
 
-    public Response(int statusCode, Socket socket, StringBuilder output, boolean isFile) {
+    public Response(HTTP_STATUS_CODE statusCode, Socket socket, StringBuilder output, boolean isFile) {
         this.statusCode = statusCode;
         this.socket = socket;
         this.output = output;
         this.isFile = isFile;
     }
 
-    public Response(int statusCode, Socket socket, byte[] bytes, boolean isFile) {
+    public Response(HTTP_STATUS_CODE statusCode, Socket socket, byte[] bytes, boolean isFile) {
         this.statusCode = statusCode;
         this.socket = socket;
         this.bytes = bytes;
@@ -50,11 +51,13 @@ public class Response {
      */
     public void responseHeaders() {
         SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
-        headers.add("HTTP/1.0 " + Integer.toString(this.statusCode) + " " + Config.STATUS_CODES.get(this.statusCode));
-        headers.add("Content-Type: text/html");
-        headers.add("Connection: close");
-        headers.add("Date: " + formatter.format(new Date(System.currentTimeMillis())));
-        headers.add("Server: Simple Java Web Server");
+        headers = new HttpHeader.Builder()
+                .addHTTP(String.valueOf(this.statusCode.getCode()))
+                .addRow("Content-Type: ", "text/html")
+                .addRow("Date: ", formatter.format(new Date(System.currentTimeMillis())))
+                .addRow("Server: ", "Simple Java Web Server")
+                .addRow("Connection: ", "close")
+                .build();
     }
 
     /**
@@ -65,27 +68,25 @@ public class Response {
         try {
             DataOutputStream outputStream = new DataOutputStream(this.socket.getOutputStream());
             switch (this.statusCode) {
-                case 200:
+                case OK_200:
                     if(isFile) {
                         responseBytes(outputStream, this.bytes);
                     } else {
                         responseBytes(outputStream, this.output.toString());
                     }
                     break;
-                case 401:
-                    responseBytes(outputStream, "<h1> " + this.statusCode + " " + Config.STATUS_CODES.get(this.statusCode) + "</h1>");
+                case UNAUTHORIZED_401:
+                    responseBytes(outputStream, "<h1> " + this.statusCode + "</h1>");
                     outputStream.flush();
                     break;
-                case 404:
-                    responseBytes(outputStream, "<h1> " + this.statusCode + " " + Config.STATUS_CODES.get(this.statusCode) + "</h1>");
-                    break;
-                case 405:
-                    responseBytes(outputStream, "<h1> " + this.statusCode + " " + Config.STATUS_CODES.get(this.statusCode) + "</h1>");
+                case NOT_FOUND_404:
+                case METHOD_NOT_ALLOWED_405:
+                    responseBytes(outputStream, "<h1> " + this.statusCode + "</h1>");
                     break;
                 default:
                     break;
             }
-            logger.info("Response sent to " + this.socket.getRemoteSocketAddress());
+            logger.info("Response sent to {}", this.socket.getRemoteSocketAddress());
             this.socket.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -102,14 +103,14 @@ public class Response {
      * @throws IOException
      */
     public void responseBytes(DataOutputStream outputStream, byte[] bytes) throws IOException {
-        for(String header : headers) {
-            outputStream.writeBytes(header + "\r\n");
+        for(String entry : headers.getHeaders()) {
+            outputStream.writeBytes(entry );
         }
-        outputStream.writeBytes("\r\n");
+        outputStream.writeBytes(CRLF);
         outputStream.writeBytes("<!DOCTYPE html><html><head><title>Java Web Server</title></head><body>");
         outputStream.write(bytes);
         outputStream.writeBytes("</body></html>");
-        outputStream.writeBytes("\r\n");
+        outputStream.writeBytes(CRLF);
         outputStream.flush();
     }
 
@@ -122,15 +123,15 @@ public class Response {
      * @throws IOException
      */
     public void responseBytes(DataOutputStream outputStream, String response) throws IOException {
-        for(String header : headers) {
-            outputStream.writeBytes(header + "\r\n");
+        for(String entry : headers.getHeaders()) {
+            outputStream.writeBytes(entry);
+            System.out.print(entry);
         }
-        outputStream.writeBytes("\r\n");
+        outputStream.writeBytes(CRLF);
         outputStream.writeBytes("<!DOCTYPE html><html><head><title>Java Web Server</title></head><body>");
         outputStream.writeBytes(response);
         outputStream.writeBytes("</body></html>");
-        outputStream.writeBytes("\r\n");
+        outputStream.writeBytes(CRLF);
         outputStream.flush();
     }
-
 }

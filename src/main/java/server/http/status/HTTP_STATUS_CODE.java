@@ -2,8 +2,11 @@ package server.http.status;
 
 import lombok.Getter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Getter
-public enum HttpStatusCode {
+public enum HTTP_STATUS_CODE {
     // Informational responses (100–199)
     CONTINUE_100(100, "Continue"),
     SWITCHING_PROTOCOLS_101(101, "Switching Protocols"),
@@ -76,8 +79,27 @@ public enum HttpStatusCode {
     private final int code;
     private final String text;
 
-    HttpStatusCode(int code, String text) {
+    // Static map to store status codes and their corresponding texts
+    private static final Map<Integer, String> codeToTextMap = new HashMap<>();
+
+    // Initialize the map statically
+    static {
+        for (HTTP_STATUS_CODE status : HTTP_STATUS_CODE.values()) {
+            codeToTextMap.put(status.getCode(), status.getText());
+        }
+    }
+    // Constructor and other methods...
+
+    public static String get(int statusCode) {
+        return codeToTextMap.getOrDefault(statusCode, "Unknown Status");
+    }
+
+    HTTP_STATUS_CODE(int code, String text) {
         this.code = code;
         this.text = text;
+    }
+    @Override
+    public String toString() {
+        return code + " " + text;
     }
 }

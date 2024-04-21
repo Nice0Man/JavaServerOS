@@ -2,12 +2,10 @@ package server;
 
 import lombok.Setter;
 import lombok.Getter;
-import java.util.logging.Logger;
-import server.http.status.HttpStatusCode;
+import server.http.status.HTTP_STATUS_CODE;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.logging.LogManager;
 
 
 @Getter
@@ -22,7 +20,7 @@ public class ClientHandler implements Runnable {
     private final BufferedReader reader;
     private final InputStream inputStream;
     private final OutputStream outputStream;
-    private final RequestHandler requestHandler;
+//    private final RequestHandler requestHandler;
 
 
     public ClientHandler(Socket socket) throws IOException {
@@ -30,14 +28,14 @@ public class ClientHandler implements Runnable {
         this.reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         this.inputStream = socket.getInputStream();
         this.outputStream = socket.getOutputStream();
-        this.requestHandler = new RequestHandler(socket);
+//        this.requestHandler = new RequestHandler(socket);
     }
 
     @Override
     public void run() {
-        try {
+        /*try {
             requestHandler.handleRequest();
-            requestHandler.sendResponse(HttpStatusCode.OK_200, SIMPLE_HTML_RESPONSE);
+            requestHandler.sendResponse(HTTP_STATUS_CODE.OK_200, SIMPLE_HTML_RESPONSE);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (Throwable e) {
@@ -48,6 +46,6 @@ public class ClientHandler implements Runnable {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
+        }*/
     }
 }

@@ -1,41 +1,50 @@
 package server.http.models;
 
-import lombok.Getter;
+import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-@Getter
-public enum HttpHeader {
-    HTTP_VERSION("HTTP/1.1 "),
-    SERVER("Server: "),
-    CONTENT_TYPE("Content-Type: "),
-    CONTENT_LENGTH("Content-Length: "),
-    CONNECTION("Connection: ");
-
-    private final String name;
-
-    HttpHeader(String name) {
-        this.name = name;
+@Data
+public class HttpHeader {
+    private final ArrayList<String> headers;
+    private static final String CRLF = "\r\n";
+    private HttpHeader(ArrayList<String> headers) {
+        this.headers = headers;
     }
 
-    public String createHeader(String value) {
-        return name + value;
+    // Getter method to retrieve a header value by key
+    public String getHeader(int index) {
+        return headers.get(index);
     }
 
-    public static Map<HttpHeader, String> parseHeaders(String[] headerLines) {
-        Map<HttpHeader, String> headers = new HashMap<>();
-        for (String headerLine : headerLines) {
-            String[] parts = headerLine.split(": ", 2);
-            if (parts.length == 2) {
-                for (HttpHeader header : values()) {
-                    if (header.getName().equalsIgnoreCase(parts[0])) {
-                        headers.put(header, parts[1]);
-                        break;
-                    }
-                }
-            }
+    // Builder class for HttpHeader
+    public static class Builder {
+        private final ArrayList<String> headers;
+
+        public Builder() {
+            this.headers = new ArrayList<>();
         }
-        return headers;
+
+        // Method to add a header
+        public Builder addRow(String key, String value) {
+            headers.add(key + ": " + value + CRLF);
+            return this;
+        }
+        public Builder addHTTP(String response){
+            headers.add("HTTP/1.1 " + response + CRLF);
+            return this;
+        }
+        // Method to add multiple headers
+        public Builder addHeaders(ArrayList<String> headers) {
+            this.headers.addAll(headers);
+            return this;
+        }
+
+        // Method to build the HttpHeader instance
+        public HttpHeader build() {
+            return new HttpHeader(headers);
+        }
     }
 }
