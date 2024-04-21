@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.Test;
-import server.http.models.DataModel;
+import com.server.http.models.DataModel;
 
 import java.io.IOException;
 import java.time.LocalDateTime;

@@ -1,13 +1,5 @@
 package server.logger;
 
-import org.junit.jupiter.api.Test;
-import server.ClientHandler;
-
-import java.io.File;
-import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.*;
-
 class LoggerTest {
     private static final String filePath = "src/test/resources/test-files/test.log";
 
