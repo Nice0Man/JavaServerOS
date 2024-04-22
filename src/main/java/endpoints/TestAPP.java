@@ -22,10 +22,11 @@ public class TestAPP {
         System.out.println("GET /csv - Получение всех записей из CSV файла");
     }
 
+    @RequestParam("id")
     @EndpointMapping(uri = "/csv/{id}", method = GET)
     public static void getRecordById(@RequestParam("id") String id) {
         // Logic for retrieving a specific record from the CSV file by its identifier and sending a response
-        System.out.println("GET /csv/" + id + " - Retrieving a record from the CSV file by identifier");
+        System.out.println(STR."GET /csv/\{id} - Retrieving a record from the CSV file by identifier");
     }
 
     @EndpointMapping(uri = "/csv", method = POST)
@@ -35,14 +36,14 @@ public class TestAPP {
     }
 
     @EndpointMapping(uri = "/csv/{id}", method = PUT)
-    public static void updateRecord(String id) {
+    public static void updateRecord(@RequestParam("id") String id) {
         // Логика для обновления существующей записи в CSV файле по ее идентификатору и отправки ответа
-        System.out.println("PUT /csv/" + id + " - Обновление записи в CSV файле");
+        System.out.println(STR."PUT /csv/\{id} - Обновление записи в CSV файле");
     }
 
     @EndpointMapping(uri = "/csv/{id}", method = DELETE)
-    public static void deleteRecord(String id) {
+    public static void deleteRecord(@RequestParam("id") String id) {
         // Логика для удаления записи из CSV файла по ее идентификатору и отправки ответа
-        System.out.println("DELETE /csv/" + id + " - Удаление записи из CSV файла");
+        System.out.println(STR."DELETE /csv/\{id} - Удаление записи из CSV файла");
     }
 }

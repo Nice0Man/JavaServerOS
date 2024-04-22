@@ -1,23 +1,17 @@
 package com.server.http.request;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
-import java.net.Socket;
-import java.nio.file.Files;
-import java.util.Objects;
-
 import com.server.http.request.annotations.HTTP_METHOD;
 import com.server.http.response.Response;
 import com.server.http.status.HTTP_STATUS_CODE;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.server.util.Config;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
+import java.net.Socket;
 
 
 /**
@@ -52,7 +46,7 @@ public class Handler implements Runnable {
             String requestMethod = line.split("\\s+")[0];
             String uri = line.split("\\s+")[1];
             EndpointMapper.handleRequest(uri, HTTP_METHOD.getMethod(requestMethod));
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | RuntimeException e) {
             logger.error("Error processing request: {}", e.getMessage());
         } catch (IOException e) {
             e.printStackTrace(System.err);
@@ -121,8 +115,8 @@ public class Handler implements Runnable {
      * @param file The requested file or directory
      */
     public void directoryListing(String uri, File file) {
-        StringBuilder output = new StringBuilder("<html><head><title>Index of " + uri);
-        output.append("</title></head><body><h1>Index of " + uri);
+        StringBuilder output = new StringBuilder(STR."<html><head><title>Index of \{uri}");
+        output.append(STR."</title></head><body><h1>Index of \{uri}");
         output.append("</h1><hr><pre>");
         File[] files = file.listFiles();
         logger.info(files);
