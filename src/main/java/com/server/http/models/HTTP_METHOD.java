@@ -1,4 +1,4 @@
-package com.server.http.request.annotations;
+package com.server.http.models;
 
 public enum HTTP_METHOD {
     GET,

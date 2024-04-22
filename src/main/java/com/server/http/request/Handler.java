@@ -1,15 +1,12 @@
 package com.server.http.request;
 
-import com.server.http.request.annotations.HTTP_METHOD;
+import com.server.http.models.HTTP_METHOD;
 import com.server.http.response.Response;
 import com.server.http.status.HTTP_STATUS_CODE;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 
@@ -17,7 +14,7 @@ import java.net.Socket;
 /**
  * Processes request on its in thread and returns a response to the client
  *
- * @author tomiwa
+ * @author Nice0Man
  *
  */
 public class Handler implements Runnable {
@@ -39,14 +36,20 @@ public class Handler implements Runnable {
      *
      */
     private void processRequest() {
+        String uri = null;
         try {
             BufferedReader in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
             String line = in.readLine();
             logger.info(line);
             String requestMethod = line.split("\\s+")[0];
-            String uri = line.split("\\s+")[1];
-            EndpointMapper.handleRequest(uri, HTTP_METHOD.getMethod(requestMethod));
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | RuntimeException e) {
+            uri = line.split("\\s+")[1];
+            response = EndpointMapper.handleRequest(this.socket, uri, HTTP_METHOD.getMethod(requestMethod));
+            response.responseView();
+        } catch (NoSuchMethodException e) {
+            logger.error("{}: (404) {}", uri, HTTP_STATUS_CODE.NOT_FOUND_404);
+            response = new Response(HTTP_STATUS_CODE.NOT_FOUND_404, this.socket);
+            response.responseView();
+        } catch (IllegalAccessException | InvocationTargetException | RuntimeException e) {
             logger.error("Error processing request: {}", e.getMessage());
         } catch (IOException e) {
             e.printStackTrace(System.err);
@@ -58,55 +61,37 @@ public class Handler implements Runnable {
         response.responseView();
     }
 
-    /**
-     * Build the response header and body
-     *
-     * @param s The incoming connection object
-     */
-//    public void processRequest(Socket s) {
-//        try {
-//            BufferedReader in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-//            String line = in.readLine();
-//            logger.info(line);
-//            String requestMethod = line.split("\\s+")[0];
-//            if(requestMethod.equalsIgnoreCase(Config.METHODS.GET.toString())) {
-//                String uri = line.split("\\s+")[1];
-//                if(uri.equals("/")) {
-//                    File file = new File(".");
-//                    directoryListing(uri, file);
-//                } else {
-//                    File file = new File(uri.substring(1));
-//                    if(file.exists()) {
-//                        int length = (int) file.length();
-//                        byte[] bytes = new byte[length];
-//                        InputStream i = Files.newInputStream(file.toPath());
-//                        int offset = 0;
-//                        while (offset < length) {
-//                            int count = i.read(bytes, offset, (length - offset));
-//                            offset += count;
-//                        }
-//                        i.close();
-//                        logger.info("{}: (200) {}", uri, HTTP_STATUS_CODE.OK_200);
-//                        response = new Response(HTTP_STATUS_CODE.OK_200, this.socket, bytes, true);
-//                        response.responseView();
-//                    } else if (file.isDirectory()) {
-//                        directoryListing(uri, file);
-//                    } else {
-//                        logger.error("{}: (404) {}", uri, HTTP_STATUS_CODE.NOT_FOUND_404);
-//                        response = new Response(HTTP_STATUS_CODE.NOT_FOUND_404, this.socket);
-//                        response.responseView();
-//                    }
-//                }
-//            } else {
-//                logger.error("{}: (405) {}", requestMethod.toUpperCase(), HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405);
-//                response = new Response(HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405, this.socket);
-//                response.responseView();
-//            }
-//            in.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
+
+    public void sendTemplate(String template, HTTP_STATUS_CODE statusCode){
+        boolean isHtmlFile = template.contains(".html");
+        if (!isHtmlFile) {
+            sendResponseToClient(this.socket,statusCode,template, false);
+        }
+        File file = new File(STR."src/main/resources/template/\{template}");
+        if(file.exists()) {
+            int length = (int) file.length();
+            byte[] bytes = new byte[length];
+            InputStream i = null;
+            try {
+                i = new FileInputStream(file);
+                int offset = 0;
+                while (offset < length) {
+                    int count = i.read(bytes, offset, (length - offset));
+                    offset += count;
+                }
+                i.close();
+                response = new Response(HTTP_STATUS_CODE.OK_200, this.socket, bytes, true);
+                response.responseView();
+            } catch (IOException e) {
+                e.printStackTrace(System.err);
+            }
+        }
+    }
+
+    private void sendResponseToClient(Socket socket, HTTP_STATUS_CODE statusCode, String string, boolean isFile){
+        Response response = new Response(statusCode, socket, new StringBuilder(string), isFile);
+        response.responseView();
+    }
 
     /**
      * List files and directories contained in the requested URI

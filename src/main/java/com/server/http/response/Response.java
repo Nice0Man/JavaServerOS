@@ -6,6 +6,8 @@ import java.net.Socket;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.server.http.models.HttpHeader;
@@ -17,15 +19,20 @@ import com.server.http.status.HTTP_STATUS_CODE;
  * @author Nice0Man
  *
  */
+@Data
 public class Response {
     private byte[] bytes;
     private boolean isFile;
     private final HTTP_STATUS_CODE statusCode;
-    private final Socket socket;
+    private Socket socket;
     private StringBuilder output;
     private HttpHeader headers;
     private static final String CRLF = "\r\n";
     private static final Logger logger = LogManager.getLogger(Response.class);
+
+    public Response(HTTP_STATUS_CODE httpStatusCode) {
+        this.statusCode = httpStatusCode;
+    }
 
     public Response(HTTP_STATUS_CODE statusCode, Socket socket) {
         this.statusCode = statusCode;
@@ -46,6 +53,26 @@ public class Response {
         this.isFile = isFile;
     }
 
+    public Response(Socket socket, StringBuilder output, HttpHeader headers, HTTP_STATUS_CODE statusCode, boolean isFile, byte[] bytes) {
+        this.socket = socket;
+        this.output = output;
+        this.headers = headers;
+        this.statusCode = statusCode;
+        this.isFile = isFile;
+        this.bytes = bytes;
+    }
+
+    public Response(Response response){
+        this(
+                response.getSocket(),
+                response.getOutput(),
+                response.getHeaders(),
+                response.getStatusCode(),
+                response.isFile(),
+                response.getBytes()
+        );
+    }
+
     /**
      * Sets HTTP response header
      */
@@ -59,6 +86,7 @@ public class Response {
                 .addRow("Connection: ", "close")
                 .build();
     }
+
 
     /**
      * Selects the appropriate response view based on the status code
@@ -89,7 +117,7 @@ public class Response {
             logger.info("Response sent to {}", this.socket.getRemoteSocketAddress());
             this.socket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            e.printStackTrace(System.err);
         }
 
     }

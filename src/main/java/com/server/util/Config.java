@@ -22,23 +22,15 @@ public final class Config {
     private static final Properties properties = new Properties();
     private static Config instance;
 
-    public static  enum METHODS {
-        GET,
-        POST,
-        PUT,
-        DELETE,
-        PATCH
-    }
 
     private Config() throws IOException {
         loadConfig();
     }
 
-    public static Config getInstance() throws IOException {
+    public static void getInstance() throws IOException {
         if (instance == null) {
             instance = new Config();
         }
-        return instance;
     }
 
     private static void loadConfig() throws IOException, FileNotFoundException {

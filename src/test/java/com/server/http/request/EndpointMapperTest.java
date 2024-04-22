@@ -1,13 +1,12 @@
 package com.server.http.request;
 
 import com.server.http.request.annotations.EndpointMapping;
-import com.server.http.request.annotations.HTTP_METHOD;
+import com.server.http.models.HTTP_METHOD;
 import com.server.http.request.annotations.RequestParam;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
