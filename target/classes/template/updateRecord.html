@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Удаление записи из CSV файла по идентификатору</title>
+</head>
+<body>
+<h1>Удаление записи из CSV файла по идентификатору</h1>
+<label for="deleteRecordId">Введите идентификатор записи для удаления:</label>
+<input type="text" id="deleteRecordId" name="deleteRecordId">
+<button onclick="deleteRecord()">Удалить запись</button>
+
+<script>
+    function deleteRecord() {
+        const deleteRecordId = document.getElementById('deleteRecordId').value;
+        // Send DELETE request to /csv/{id} endpoint
+        fetch(`/csv/${deleteRecordId}`, {
+            method: 'DELETE'
+        })
+        .then(response => console.log('Record deleted successfully'))
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+</body>
+</html>

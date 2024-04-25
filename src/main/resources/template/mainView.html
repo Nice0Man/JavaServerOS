@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Операции с записями CSV файла</title>
+</head>
+<body>
+
+<!-- Получение всех записей из CSV файла -->
+<section>
+    <h1>Получение всех записей из CSV файла</h1>
+    <button onclick="getAllRecords()">Получить все записи</button>
+    <div id="allRecordsContainer"></div>
+</section>
+
+<!-- Получение записи из CSV файла по идентификатору -->
+<section>
+    <h1>Получение записи из CSV файла по идентификатору</h1>
+    <label for="recordId">Введите идентификатор записи:</label>
+    <input type="text" id="recordId" name="recordId">
+    <button onclick="getRecordById()">Получить запись по ID</button>
+    <div id="singleRecordContainer"></div>
+</section>
+
+<!-- Запись новой записи в CSV файл -->
+<section>
+    <h1>Добавление новой записи в CSV файл</h1>
+    <label for="newRecordData">Введите данные для новой записи:</label>
+    <input type="text" id="newRecordData" name="newRecordData">
+    <button onclick="addNewRecord()">Добавить новую запись</button>
+</section>
+
+<!-- Обновление записи в CSV файле по идентификатору -->
+<section>
+    <h1>Обновление записи в CSV файле по идентификатору</h1>
+    <label for="updateRecordId">Введите идентификатор записи для обновления:</label>
+    <input type="text" id="updateRecordId" name="updateRecordId">
+    <label for="updatedRecordData">Введите новые данные для обновления записи:</label>
+    <input type="text" id="updatedRecordData" name="updatedRecordData">
+    <button onclick="updateRecord()">Обновить запись</button>
+</section>
+
+<!-- Удаление записи из CSV файла по идентификатору -->
+<section>
+    <h1>Удаление записи из CSV файла по идентификатору</h1>
+    <label for="deleteRecordId">Введите идентификатор записи для удаления:</label>
+    <input type="text" id="deleteRecordId" name="deleteRecordId">
+    <button onclick="deleteRecord()">Удалить запись</button>
+</section>
+
+<script>
+    function getAllRecords() {
+        // Send GET request to /csv/all endpoint to retrieve all records
+        fetch('/csv/all')
+        .then(response => response.json())
+        .then(data => {
+            const allRecordsContainer = document.getElementById('allRecordsContainer');
+            allRecordsContainer.innerHTML = `<h2>Все записи из CSV файла:</h2><p>${JSON.stringify(data)}</p>`;
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function getRecordById() {
+        const recordId = document.getElementById('recordId').value;
+        // Send GET request to /csv/{id} endpoint to retrieve record by ID
+        fetch(`/csv/${recordId}`)
+        .then(response => response.json())
+        .then(data => {
+            const singleRecordContainer = document.getElementById('singleRecordContainer');
+            singleRecordContainer.innerHTML = `<h2>Запись с идентификатором ${recordId}:</h2><p>${JSON.stringify(data)}</p>`;
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function addNewRecord() {
+        const newRecordData = document.getElementById('newRecordData').value;
+        // Send POST request to /csv endpoint to add new record
+        fetch('/csv', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ data: newRecordData })
+        })
+        .then(response => console.log('New record added successfully'))
+        .catch(error => console.error('Error:', error));
+    }
+
+    function updateRecord() {
+        const updateRecordId = document.getElementById('updateRecordId').value;
+        const updatedRecordData = document.getElementById('updatedRecordData').value;
+        // Send PUT request to /csv/{id} endpoint with updatedRecordData
+        fetch(`/csv/${updateRecordId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ data: updatedRecordData })
+        })
+        .then(response => console.log('Record updated successfully'))
+        .catch(error => console.error('Error:', error));
+    }
+
+    function deleteRecord() {
+        const deleteRecordId = document.getElementById('deleteRecordId').value;
+        // Send DELETE request to /csv/{id} endpoint to delete record by ID
+        fetch(`/csv/${deleteRecordId}`, {
+            method: 'DELETE'
+        })
+        .then(response => console.log('Record deleted successfully'))
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+
+</body>
+</html>

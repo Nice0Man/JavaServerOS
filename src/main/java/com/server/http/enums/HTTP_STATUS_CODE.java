@@ -1,4 +1,4 @@
-package com.server.http.status;
+package com.server.http.enums;
 
 import lombok.Getter;
 

@@ -1,32 +1,45 @@
 package com.server.http.response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.server.http.status.HTTP_STATUS_CODE;
+import com.server.http.enums.CONTENT_TYPE;
+import com.server.http.enums.HTTP_STATUS_CODE;
+
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Map;
 
+@Getter
+@Setter
 public class Json extends AbstractResponse {
-    private final Map<String, String> jsonData;
+    private final String jsonData;
+    private ObjectMapper objectMapper;
 
-    public Json(Socket socket, HTTP_STATUS_CODE statusCode, Map<String, String> jsonData) {
+    public Json(String data){
+        objectMapper = new ObjectMapper();
+        jsonData = data;
+    }
+
+    public Json(Socket socket, HTTP_STATUS_CODE statusCode, String jsonData) throws IOException {
         super(socket, statusCode, CONTENT_TYPE.TEXT_HTML);
         this.jsonData = jsonData;
     }
 
-    public void sendResponse() throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        String json = objectMapper.writeValueAsString(jsonData);
+    public Json(Json other) throws IOException {
+        super(other.getSocket(), other.getStatusCode(), other.getHeaders());
+        jsonData = other.jsonData;
+    }
 
-        DataOutputStream outputStream = new DataOutputStream(socket.getOutputStream());
-        outputStream.writeBytes("HTTP/1.1 " + statusCode.getCode() + " " + statusCode.getText() + "\r\n");
-        outputStream.writeBytes("Content-Length: " + json.length() + "\r\n");
-        outputStream.writeBytes("Content-Type: application/json\r\n");
-        outputStream.writeBytes("\r\n");
-        outputStream.writeBytes(json);
-        outputStream.flush();
-        outputStream.close();
+    public static AbstractResponse sendResponse(String data) throws IOException {
+        return new Json(data);
+    }
+
+    public void sendResponse(DataOutputStream outputStream) throws IOException {
+        setHeaders(CONTENT_TYPE.APPLICATION_JSON);
+        writeHeaders(outputStream);
+        writeBody(outputStream, jsonData.getBytes());
+        flush(outputStream);
     }
 }

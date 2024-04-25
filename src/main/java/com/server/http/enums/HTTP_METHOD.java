@@ -1,4 +1,4 @@
-package com.server.http.models;
+package com.server.http.enums;
 
 public enum HTTP_METHOD {
     GET,

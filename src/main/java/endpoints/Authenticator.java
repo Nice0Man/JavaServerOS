@@ -9,7 +9,7 @@ import java.util.Base64;
 
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.server.http.models.HttpHeader;
-import com.server.http.status.HTTP_STATUS_CODE;
+import com.server.http.enums.HTTP_STATUS_CODE;
 import com.server.util.Config;
 
 /**

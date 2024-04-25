@@ -1,8 +1,9 @@
 package com.server.http.request;
 
-import com.server.http.models.HTTP_METHOD;
-import com.server.http.response.Response;
-import com.server.http.status.HTTP_STATUS_CODE;
+import com.server.http.enums.HTTP_METHOD;
+import com.server.http.response.AbstractResponse;
+import com.server.http.response.Html;
+import com.server.http.enums.HTTP_STATUS_CODE;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,7 +20,7 @@ import java.net.Socket;
  */
 public class Handler implements Runnable {
     private final Socket socket;
-    private Response response;
+    private AbstractResponse response;
     private static final Logger logger = LogManager.getLogger(Handler.class);
 
     public Handler(Socket socket) {
@@ -45,26 +46,18 @@ public class Handler implements Runnable {
                 String[] parts = line.split("\\s+");
                 String requestMethod = parts[0];
                 uri = parts[1];
-                String requestData = readRequestBody(socket);
                 HTTP_METHOD httpMethod = HTTP_METHOD.getMethod(requestMethod);
-
+                System.out.println(httpMethod);
                 switch (httpMethod) {
-                    case GET, POST, PUT, DELETE:
-                        response = EndpointMapper.handleRequest(this.socket, uri, httpMethod, requestData);
-                        break;
-                    default:
-                        handleUnsupportedMethod();
-                        return;
+                    case GET, POST, PUT, DELETE -> EndpointMapper.handleRequest(this.socket, uri, httpMethod);
+                    default -> handleUnsupportedMethod();
                 }
-
-                response.responseView();
             } else {
                 logger.error("Received null request line");
             }
         } catch (NoSuchMethodException e) {
             logger.error("{}: (404) {}", uri, HTTP_STATUS_CODE.NOT_FOUND_404);
-            response = new Response(HTTP_STATUS_CODE.NOT_FOUND_404, this.socket);
-            response.responseView();
+//            response = new Html(this.socket, HTTP_STATUS_CODE.NOT_FOUND_404);
         } catch (IllegalAccessException | InvocationTargetException | RuntimeException e) {
             logger.error("Error processing request: {}", e.getMessage());
         } catch (IOException e) {
@@ -78,38 +71,16 @@ public class Handler implements Runnable {
     private void handleUnsupportedMethod() {
         logger.error("Unsupported HTTP method");
         try {
-            sendErrorResponse(HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405);
+            response = sendErrorResponse();
         } catch (IOException e) {
             e.printStackTrace(System.err);
         }
     }
 
-    private void sendErrorResponse(HTTP_STATUS_CODE statusCode) throws IOException {
-        Response response = new Response(statusCode, socket);
-        response.responseView();
+    private AbstractResponse sendErrorResponse() throws IOException {
+        return new Html(socket, HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405);
     }
-    /**
-     * List files and directories contained in the requested URI
-     *
-     * @param uri  The URI in the incoming request
-     * @param file The requested file or directory
-     */
-    public void directoryListing(String uri, File file) {
-        StringBuilder output = new StringBuilder(STR."<html><head><title>Index of \{uri}");
-        output.append(STR."</title></head><body><h1>Index of \{uri}");
-        output.append("</h1><hr><pre>");
-        File[] files = file.listFiles();
-        logger.info(files);
-        if (files != null) {
-            for (File f : files) {
-                output.append(" <a href=\"" + f.getPath() + "\">" + f.getPath() + "</a>\n");
-            }
-        }
-        output.append("<hr></pre></body></html>");
-        logger.info("{}: (200) {}", uri, HTTP_STATUS_CODE.OK_200);
-        response = new Response(HTTP_STATUS_CODE.OK_200, this.socket, output, false);
-        response.responseView();
-    }
+
 
     public static String readRequestBody(Socket socket) throws IOException {
         StringBuilder requestBody = new StringBuilder();
@@ -132,7 +103,6 @@ public class Handler implements Runnable {
                 requestBody.append(line);
             }
         }
-
         return requestBody.toString();
     }
 }

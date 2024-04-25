@@ -1,5 +1,7 @@
 package com.server.http.request.annotations;
 
+import com.server.http.enums.RESPONSE_TYPE;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

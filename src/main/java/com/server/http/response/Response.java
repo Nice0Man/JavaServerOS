@@ -1,18 +1,15 @@
 package com.server.http.response;
 
 import java.io.*;
-import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.server.http.models.HttpHeader;
-import com.server.http.status.HTTP_STATUS_CODE;
+import com.server.http.enums.HTTP_STATUS_CODE;
 
 /**
  * Builds HTTP responses
@@ -96,7 +93,6 @@ public class Response {
 
     public void responseView() {
         responseHeaders("text/html");
-
 //        add other types
         try {
             DataOutputStream outputStream = new DataOutputStream(this.socket.getOutputStream());

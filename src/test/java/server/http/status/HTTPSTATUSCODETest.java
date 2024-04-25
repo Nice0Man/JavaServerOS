@@ -1,6 +1,6 @@
 package server.http.status;
 
-import com.server.http.status.HTTP_STATUS_CODE;
+import com.server.http.enums.HTTP_STATUS_CODE;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 public class ApplicationEntryPoint implements Serializable {
     private static Logger logger;
 
-    public static void setUp(String[] args){
+    private static void setUp(String[] args){
         logger = LogManager.getLogger(ApplicationEntryPoint.class);
         try {
             Config.getInstance();
@@ -30,12 +30,7 @@ public class ApplicationEntryPoint implements Serializable {
         logger.info("Server is starting ...");
 
         // Shutdown cleanup
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                logger.warn("Getting ready to shutdown ...");
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> logger.warn("Getting ready to shutdown ...")));
     }
 
     public static void setPort(String[] args) {
@@ -52,6 +47,7 @@ public class ApplicationEntryPoint implements Serializable {
         try {
             @SuppressWarnings("resource")
             ServerSocket serverSocket = new ServerSocket(Config.PORT);
+            //noinspection InfiniteLoopStatement
             while (true) {
                 Socket socket = serverSocket.accept();
                 Listener.getInstance().addRequestToQueue(socket);

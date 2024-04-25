@@ -1,6 +1,7 @@
 package com.server.http.request.annotations;
 
-import com.server.http.models.HTTP_METHOD;
+import com.server.http.enums.HTTP_METHOD;
+import com.server.http.enums.RESPONSE_TYPE;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -12,4 +13,5 @@ import java.lang.annotation.Target;
 public @interface EndpointMapping {
     String uri() default "/";
     HTTP_METHOD method() default HTTP_METHOD.GET;
+    RESPONSE_TYPE type() default RESPONSE_TYPE.HTML;
 }

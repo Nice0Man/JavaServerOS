@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Получение записи из CSV файла</title>
+</head>
+<body>
+<h1>Получение записи из CSV файла</h1>
+<label for="recordId">Введите идентификатор записи:</label>
+<input type="text" id="recordId" name="recordId">
+<button onclick="getRecord()">Получить запись</button>
+
+<script>
+    function getRecord() {
+        const recordId = document.getElementById('recordId').value;
+        // Send GET request to /csv/{id} endpoint
+        fetch('/csv/' + recordId, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Process retrieved record data
+            console.log('Record data:', data);
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+</body>
+</html>

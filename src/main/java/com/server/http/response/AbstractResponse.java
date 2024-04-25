@@ -1,37 +1,51 @@
 package com.server.http.response;
 
+import com.server.http.enums.CONTENT_TYPE;
 import com.server.http.models.HttpHeader;
-import com.server.http.status.HTTP_STATUS_CODE;
+import com.server.http.enums.HTTP_STATUS_CODE;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 
+@Data
+@NoArgsConstructor(force = true)
 public abstract class AbstractResponse {
-    protected static final String CRLF = "\r\n";
-    protected final Socket socket;
-    protected final HTTP_STATUS_CODE statusCode;
-    protected final HttpHeader headers;
+    private Socket socket;
+    private HTTP_STATUS_CODE statusCode;
 
-    public AbstractResponse(Socket socket, HTTP_STATUS_CODE statusCode, CONTENT_TYPE... contentTypes) {
+    protected static final String CRLF = "\r\n";
+    protected HttpHeader headers;
+
+    protected AbstractResponse(Socket socket, HTTP_STATUS_CODE statusCode, CONTENT_TYPE... contentTypes) throws IOException {
         this.socket = socket;
         this.statusCode = statusCode;
-        this.headers = setHeaders(contentTypes);
+        setHeaders(contentTypes);
     }
 
-    protected abstract Response sendResponse(HTTP_STATUS_CODE code) throws IOException;
+    protected AbstractResponse(Socket socket, HTTP_STATUS_CODE statusCode, HttpHeader headers) throws IOException {
+        this.socket = socket;
+        this.statusCode = statusCode;
+        if (headers != null){
+            this.headers = headers;
+        } else {
+            setHeaders(CONTENT_TYPE.TEXT_HTML,CONTENT_TYPE.APPLICATION_JSON);
+        }
+    }
 
-    protected HttpHeader setHeaders(CONTENT_TYPE... contentTypes) {
+    protected void setHeaders(CONTENT_TYPE... contentTypes) {
         StringBuilder contentTypeBuilder = new StringBuilder();
         for (CONTENT_TYPE contentType : contentTypes) {
-            contentTypeBuilder.append(contentType.getType()).append(", ");
+            if (contentType != null) contentTypeBuilder.append(contentType.getType()).append(",");
         }
-        String contentTypeValue = contentTypeBuilder.toString().replaceAll(", $", "");
         SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
-        return new HttpHeader.Builder()
+        this.headers = new HttpHeader.Builder()
                 .addHTTP(String.valueOf(this.statusCode.getCode()))
-                .addRow("Content-Type", contentTypeValue)
+                .addRow("Content-Type", contentTypeBuilder.toString())
                 .addRow("Date", formatter.format(new Date(System.currentTimeMillis())))
                 .addRow("Server", "Simple Java Web Server")
                 .addRow("Connection", "close")
@@ -45,8 +59,8 @@ public abstract class AbstractResponse {
         outputStream.writeBytes(CRLF);
     }
 
-    protected void writeBody(DataOutputStream outputStream, String body) throws IOException {
-        outputStream.writeBytes(body);
+    protected void writeBody(DataOutputStream outputStream, byte[] bytes) throws IOException {
+        outputStream.write(bytes);
         outputStream.writeBytes(CRLF);
     }
 

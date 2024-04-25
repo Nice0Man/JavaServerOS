@@ -1,17 +1,17 @@
 package com.server.http.request;
 
+import com.server.http.enums.HTTP_STATUS_CODE;
 import com.server.http.request.annotations.EndpointMapping;
-import com.server.http.models.HTTP_METHOD;
+import com.server.http.enums.HTTP_METHOD;
 import com.server.http.request.annotations.RequestParam;
 import com.server.http.request.annotations.Template;
-import com.server.http.response.Response;
+import com.server.http.response.AbstractResponse;
+import com.server.http.response.Html;
+import com.server.http.response.Json;
 import lombok.Data;
 import lombok.Setter;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 public class EndpointMapper {
     private Socket socket;
     private static volatile EndpointMapper instance;
+    private DataOutputStream dataOutputStream;
     private static Map<String, Method> endpointMap = new HashMap<>();
 
     private EndpointMapper() {
@@ -58,38 +59,64 @@ public class EndpointMapper {
         }
     }
 
-    public static Response handleRequest(Socket socket, String requestUri, HTTP_METHOD httpMethod, String requestData) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    private static void setResponseParameters(AbstractResponse response, Socket socket){
+        response.setSocket(socket);
+        response.setStatusCode(HTTP_STATUS_CODE.OK_200);
+    }
+
+    public static void handleRequest(Socket socket, String requestUri, HTTP_METHOD httpMethod)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
         Method method = findMatchingMethod(requestUri, httpMethod);
         if (method != null) {
             Object[] args = extractArgsFromUri(requestUri, method);
-            Response response = (Response)method.invoke(null, args);
+            AbstractResponse response = (AbstractResponse) method.invoke(null, args);
             if (response != null) {
-                return handleResponse(socket, method, response, requestData);
+                setResponseParameters(response, socket);
+                EndpointMapping annotation = method.getAnnotation(EndpointMapping.class);
+                switch (annotation.type()){
+                    case HTML -> {
+                        Template templateAnnotation = method.getAnnotation(Template.class);
+                        Html htmlResponse = new Html((Html) response);
+                        handleHtmlResponse(htmlResponse, templateAnnotation.path());
+                        socket.close();
+                    }
+                    case JSON -> {
+                        Json jsonResponse = new Json((Json) response);
+                        handleJsonResponse(jsonResponse);
+                        socket.close();
+                    }
+                    default -> {
+                        return;
+                    }
+                }
             }
         } else {
             throw new NoSuchMethodException(STR."Endpoint not found for request URI: \{requestUri}");
         }
-        return null;
     }
 
-    private static Response handleResponse(Socket socket, Method method, Response response, String requestData) {
-        // Проверяем наличие аннотации Template
-        Template annotation = method.getAnnotation(Template.class);
-        if (annotation != null) {
-            String filePath = annotation.path();
-            File file = new File(STR."src/main/resources/template/\{filePath}");
-            if (file.exists()) {
-                try {
-                    // Чтение содержимого файла шаблона
-                    byte[] bytes = readFileBytes(file);
-                    return new Response(response.getStatusCode(), socket, bytes, true);
-                } catch (IOException e) {
-                    e.printStackTrace(System.err);
-                }
-            }
+    private static void handleJsonResponse(Json response) throws IOException {
+        DataOutputStream outputStream = new DataOutputStream(response.getSocket().getOutputStream());
+        try {
+            response.sendResponse(outputStream);
+        } catch (IOException e) {
+            e.printStackTrace(System.err);
         }
-        // Если нет аннотации Template или произошла ошибка при чтении файла, возвращаем данные запроса
-        return new Response(response.getStatusCode(), socket, requestData.getBytes(), false);
+    }
+
+    private static void handleHtmlResponse(Html response, String filePath) throws IOException {
+        File file = new File(STR."src/main/resources/template/\{filePath}");
+        DataOutputStream outputStream = new DataOutputStream(response.getSocket().getOutputStream());
+        if (file.exists()) {
+            try {
+                byte[] bytes = readFileBytes(file);
+                response.sendByteResponse(outputStream, bytes);
+            } catch (IOException e) {
+                e.printStackTrace(System.err);
+            }
+        } else {
+           response.sendError(outputStream, HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR_500);
+        }
     }
 
     /**
@@ -111,7 +138,6 @@ public class EndpointMapper {
         }
         return bytes;
     }
-
 
     private static Method findMatchingMethod(String requestUri, HTTP_METHOD httpMethod) throws NoSuchMethodException {
         for (Map.Entry<String, Method> entry : endpointMap.entrySet()) {
@@ -169,3 +195,4 @@ public class EndpointMapper {
         return args.toArray();
     }
 }
+

@@ -1,15 +1,20 @@
 import com.server.app.ServerRunnableApplication;
 import com.server.app.annotation.ServerApplication;
 
+import com.server.http.enums.RESPONSE_TYPE;
 import com.server.http.request.annotations.EndpointMapping;
 import com.server.http.request.annotations.HttpMethods;
 import com.server.http.request.annotations.RequestParam;
 import com.server.http.request.annotations.Template;
+import com.server.http.response.AbstractResponse;
 import com.server.http.response.Html;
-import com.server.http.response.Response;
-import com.server.http.status.HTTP_STATUS_CODE;
+import com.server.http.response.Json;
 
-import static com.server.http.models.HTTP_METHOD.*;
+import java.io.IOException;
+
+import static com.server.http.enums.HTTP_METHOD.*;
+import static com.server.http.enums.RESPONSE_TYPE.HTML;
+import static com.server.http.enums.RESPONSE_TYPE.JSON;
 
 @HttpMethods
 @ServerApplication
@@ -19,48 +24,48 @@ public class App {
     }
 
     @Template(path = "index.html")
-    @EndpointMapping(uri = "/", method = GET)
-    public static Response helloWorld(){
-        return Html.sendResponse();
+    @EndpointMapping(uri = "/")
+    public static AbstractResponse helloWorld() {
+        return Html.renderTemplate();
     }
 
-    @Template(path = "getAllRecords.html")
-    @EndpointMapping(uri = "/csv/all", method = GET)
-    public static Response getAllRecords() {
-        // Логика для получения всех записей из CSV файла и отправки ответа
-        System.out.println("GET /csv - Получение всех записей из CSV файла");
-        return new Response(HTTP_STATUS_CODE.OK_200);
-    }
 
-    @Template(path = "getRecordById.html")
-    @EndpointMapping(uri = "/csv/{id}", method = GET)
-    public static Response getRecordById(@RequestParam("id") String id) {
-        // Logic for retrieving a specific record from the CSV file by its identifier and sending a response
-        System.out.println(STR."GET /csv/\{id} - Retrieving a record from the CSV file by identifier");
-        return new Response(HTTP_STATUS_CODE.OK_200);
-    }
-
-    @Template(path = "addRecord.html")
-    @EndpointMapping(uri = "/csv/add", method = POST)
-    public static Response addRecord() {
+    @Template(path = "mainView.html")
+    @EndpointMapping(uri = "/csv", type = HTML)
+    public static AbstractResponse addRecord() {
         // Логика для добавления новой записи в CSV файл и отправки ответа
-        System.out.println("POST /csv/add - Добавление новой записи в CSV файл");
-        return new Response(HTTP_STATUS_CODE.OK_200);
+        return Html.renderTemplate();
     }
 
-    @Template(path = "updateRecord.html")
-    @EndpointMapping(uri = "/csv/update", method = PUT)
-    public static Response updateRecord(@RequestParam("id") String id) {
-        // Логика для обновления существующей записи в CSV файле по ее идентификатору и отправки ответа
-        System.out.println(STR."PUT /cs`v/update\{id} - Обновление записи в CSV файле");
-        return new Response(HTTP_STATUS_CODE.OK_200);
+
+    @EndpointMapping(uri = "/csv/all", method = GET, type = JSON)
+    public static AbstractResponse getAllRecords() throws IOException {
+
+        String json = "{\"id\":1,\"text\":\"Sample text\",\"time\":\"2022-04-09T12:30:00\"}";
+        return Json.sendResponse(json);
     }
 
-    @Template(path = "deleteRecord.html")
-    @EndpointMapping(uri = "/csv/delete", method = DELETE)
-    public static Response deleteRecord(@RequestParam("id") String id) {
-        // Логика для удаления записи из CSV файла по ее идентификатору и отправки ответа
-        System.out.println(STR."DELETE /csv/delete/\{id} - Удаление записи из CSV файла");
-        return new Response(HTTP_STATUS_CODE.OK_200);
+
+    @EndpointMapping(uri = "/csv/{id}", method = GET , type = JSON)
+    public static AbstractResponse getRecordById(@RequestParam("id") String id) throws IOException {
+
+        String json = "{\"id\":1,\"text\":\"Sample text\",\"time\":\"2022-04-09T12:30:00\"}";
+        return Json.sendResponse(json);
+    }
+
+
+    @EndpointMapping(uri = "/csv/{id}", method = PUT, type = JSON)
+    public static AbstractResponse updateRecord(@RequestParam("id") String id) throws IOException {
+
+        String json = "{\"id\":1,\"text\":\"Sample text\",\"time\":\"2022-04-09T12:30:00\"}";
+        return Json.sendResponse(json);
+    }
+
+
+    @EndpointMapping(uri = "/csv/{id}", method = DELETE, type = JSON)
+    public static AbstractResponse deleteRecord(@RequestParam("id") String id) throws IOException {
+
+        String json = "{\"id\":1,\"text\":\"Sample text\",\"time\":\"2022-04-09T12:30:00\"}";
+        return Json.sendResponse(json);
     }
 }
