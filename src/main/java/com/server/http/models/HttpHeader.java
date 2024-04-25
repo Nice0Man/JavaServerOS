@@ -27,11 +27,11 @@ public class HttpHeader {
 
         // Method to add a header
         public Builder addRow(String key, String value) {
-            headers.add(key + ": " + value + CRLF);
+            headers.add(STR."\{key}: \{value}\{CRLF}");
             return this;
         }
         public Builder addHTTP(String response){
-            headers.add("HTTP/1.1 " + response + CRLF);
+            headers.add(STR."HTTP/1.1 \{response}\{CRLF}");
             return this;
         }
         // Method to add multiple headers

@@ -40,11 +40,27 @@ public class Handler implements Runnable {
         try {
             BufferedReader in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
             String line = in.readLine();
-            logger.info(line);
-            String requestMethod = line.split("\\s+")[0];
-            uri = line.split("\\s+")[1];
-            response = EndpointMapper.handleRequest(this.socket, uri, HTTP_METHOD.getMethod(requestMethod));
-            response.responseView();
+            if (line != null) {
+                logger.info(line);
+                String[] parts = line.split("\\s+");
+                String requestMethod = parts[0];
+                uri = parts[1];
+                String requestData = readRequestBody(socket);
+                HTTP_METHOD httpMethod = HTTP_METHOD.getMethod(requestMethod);
+
+                switch (httpMethod) {
+                    case GET, POST, PUT, DELETE:
+                        response = EndpointMapper.handleRequest(this.socket, uri, httpMethod, requestData);
+                        break;
+                    default:
+                        handleUnsupportedMethod();
+                        return;
+                }
+
+                response.responseView();
+            } else {
+                logger.error("Received null request line");
+            }
         } catch (NoSuchMethodException e) {
             logger.error("{}: (404) {}", uri, HTTP_STATUS_CODE.NOT_FOUND_404);
             response = new Response(HTTP_STATUS_CODE.NOT_FOUND_404, this.socket);
@@ -56,43 +72,22 @@ public class Handler implements Runnable {
         }
     }
 
+    /**
+     * Handles unsupported HTTP methods
+     */
+    private void handleUnsupportedMethod() {
+        logger.error("Unsupported HTTP method");
+        try {
+            sendErrorResponse(HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405);
+        } catch (IOException e) {
+            e.printStackTrace(System.err);
+        }
+    }
+
     private void sendErrorResponse(HTTP_STATUS_CODE statusCode) throws IOException {
         Response response = new Response(statusCode, socket);
         response.responseView();
     }
-
-
-    public void sendTemplate(String template, HTTP_STATUS_CODE statusCode){
-        boolean isHtmlFile = template.contains(".html");
-        if (!isHtmlFile) {
-            sendResponseToClient(this.socket,statusCode,template, false);
-        }
-        File file = new File(STR."src/main/resources/template/\{template}");
-        if(file.exists()) {
-            int length = (int) file.length();
-            byte[] bytes = new byte[length];
-            InputStream i = null;
-            try {
-                i = new FileInputStream(file);
-                int offset = 0;
-                while (offset < length) {
-                    int count = i.read(bytes, offset, (length - offset));
-                    offset += count;
-                }
-                i.close();
-                response = new Response(HTTP_STATUS_CODE.OK_200, this.socket, bytes, true);
-                response.responseView();
-            } catch (IOException e) {
-                e.printStackTrace(System.err);
-            }
-        }
-    }
-
-    private void sendResponseToClient(Socket socket, HTTP_STATUS_CODE statusCode, String string, boolean isFile){
-        Response response = new Response(statusCode, socket, new StringBuilder(string), isFile);
-        response.responseView();
-    }
-
     /**
      * List files and directories contained in the requested URI
      *
@@ -114,5 +109,30 @@ public class Handler implements Runnable {
         logger.info("{}: (200) {}", uri, HTTP_STATUS_CODE.OK_200);
         response = new Response(HTTP_STATUS_CODE.OK_200, this.socket, output, false);
         response.responseView();
+    }
+
+    public static String readRequestBody(Socket socket) throws IOException {
+        StringBuilder requestBody = new StringBuilder();
+        InputStream inputStream = socket.getInputStream();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+        String line;
+        boolean headerPassed = false;
+
+        // Пропускаем заголовки запроса
+        while ((line = reader.readLine()) != null) {
+            if (line.isEmpty()) {
+                headerPassed = true;
+                break;
+            }
+        }
+
+        // Считываем тело запроса
+        if (headerPassed) {
+            while ((line = reader.readLine()) != null) {
+                requestBody.append(line);
+            }
+        }
+
+        return requestBody.toString();
     }
 }

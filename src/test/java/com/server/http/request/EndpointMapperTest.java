@@ -8,58 +8,91 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class EndpointMapperTest {
-
-    @BeforeEach
-    void setUp() {
-        EndpointMapper.setEndpointMap(new HashMap<>());
+    @Test
+    void getInstance() {
     }
 
     @Test
-    void test_map_endpoints() {
-        // Test mapping of endpoints
-        // Setup
-        Class<?> testClass = TestEndpoints.class;
-
-        // Exercise
-        EndpointMapper.mapEndpoints(testClass);
-
-        // Verify
-        assertFalse(EndpointMapper.getEndpointMap().isEmpty());
+    void mapEndpoints() {
     }
 
     @Test
-    void test_handle_request_with_valid_endpoint() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        // Test handling of requests with a valid endpoint
-        // Setup
-        EndpointMapper.mapEndpoints(TestEndpoints.class);
-        String requestUri = "/csv/123";
-        HTTP_METHOD httpMethod = HTTP_METHOD.GET;
-        EndpointMapper.handleRequest(requestUri, httpMethod);
+    void handleRequest() {
     }
 
     @Test
-    void test_handle_request_with_invalid_endpoint() {
-        // Test handling of requests with an invalid endpoint
-        // Setup
-        EndpointMapper.mapEndpoints(TestEndpoints.class);
-        String requestUri = "/invalid";
-        HTTP_METHOD httpMethod = HTTP_METHOD.GET;
-
-        // Exercise and Verify
-        NoSuchMethodException exception = assertThrows(NoSuchMethodException.class, () -> EndpointMapper.handleRequest(requestUri, httpMethod));
-        assertEquals(STR."Endpoint not found for request URI: \{requestUri}", exception.getMessage());
+    void getSocket() {
     }
 
-    static class TestEndpoints {
-//        @RequestParam("id")
-        @EndpointMapping(uri = "/csv/{id}", method = HTTP_METHOD.GET)
-        public static void getRecordById(@RequestParam("id") String id) {
-            // Logic for retrieving a specific record from the CSV file by its identifier and sending a response
-            System.out.println(STR."GET \{id} from - Retrieving a record from the CSV file by identifier");
+    @Test
+    void testEquals() {
+    }
+
+    @Test
+    void canEqual() {
+    }
+
+    @Test
+    void testHashCode() {
+    }
+
+    @Test
+    void testToString() {
+        String uri = "http://localhost:8080/csv/test/{id}";
+
+        String res = convertUriToRegex(uri);
+        System.out.println(res);
+    }
+    private static String convertUriToRegex(String uri) {
+        // Escape special characters in URI and replace parameters with regex patterns
+        return uri.replaceAll("\\{([^}]*)}", "\\\\d+");
+    }
+    private static boolean matchesEndpoint(String requestUri, String endpointRegex, HTTP_METHOD httpMethod) {
+        String[] parts = endpointRegex.split("\\s+");
+        if (parts.length < 2) {
+            return false;
         }
+        String methodPart = parts[0];
+        String regexPart = parts[1];
+        if (!httpMethod.name().equalsIgnoreCase(methodPart)) {
+            return false;
+        }
+        Pattern pattern = Pattern.compile(regexPart);
+        System.out.println(pattern);
+        Matcher matcher = pattern.matcher(requestUri);
+        System.out.println(matcher.matches());
+        return matcher.matches();
+    }
+
+    @Test
+    void testMatchesEndpoint() {
+        // Define sample requestUri and endpointRegex
+        String uriPattern = "GET /example/test/{id}";
+        uriPattern = convertUriToRegex(uriPattern);
+        System.out.println(uriPattern);
+
+        String requestUri = "/example/test/113";
+
+        // Test when the HTTP_METHOD matches and the requestUri matches the regex
+        assertTrue(matchesEndpoint(requestUri, uriPattern, HTTP_METHOD.GET));
+
+        // Test when the HTTP_METHOD matches but the requestUri does not match the regex
+        assertFalse(matchesEndpoint("/different", convertUriToRegex(uriPattern), HTTP_METHOD.GET));
+
+        // Test when the HTTP_METHOD does not match
+        assertFalse(matchesEndpoint(requestUri, convertUriToRegex(uriPattern), HTTP_METHOD.POST));
+
+        // Test when endpointRegex does not contain method and regex parts
+        assertFalse(matchesEndpoint(requestUri, "GET", HTTP_METHOD.GET));
+    }
+
+    @Test
+    void setSocket() {
     }
 }

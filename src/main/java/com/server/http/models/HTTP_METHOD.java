@@ -12,6 +12,6 @@ public enum HTTP_METHOD {
                 return method;
             }
         }
-        throw new RuntimeException("Requested method: " + requestMethod + " doesn't exist!");
+        throw new RuntimeException(STR."Requested method: \{requestMethod} doesn't exist!");
     }
 }

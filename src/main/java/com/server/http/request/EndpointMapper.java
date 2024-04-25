@@ -58,43 +58,61 @@ public class EndpointMapper {
         }
     }
 
-    public static Response handleRequest(Socket socket, String requestUri, HTTP_METHOD httpMethod) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public static Response handleRequest(Socket socket, String requestUri, HTTP_METHOD httpMethod, String requestData) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Method method = findMatchingMethod(requestUri, httpMethod);
         if (method != null) {
             Object[] args = extractArgsFromUri(requestUri, method);
             Response response = (Response)method.invoke(null, args);
-            return handleResponse(socket, method, response);
+            if (response != null) {
+                return handleResponse(socket, method, response, requestData);
+            }
         } else {
             throw new NoSuchMethodException(STR."Endpoint not found for request URI: \{requestUri}");
         }
+        return null;
     }
 
-    private static Response handleResponse(Socket socket, Method method, Response response) {
+    private static Response handleResponse(Socket socket, Method method, Response response, String requestData) {
+        // Проверяем наличие аннотации Template
         Template annotation = method.getAnnotation(Template.class);
-        if (annotation != null){
+        if (annotation != null) {
             String filePath = annotation.path();
             File file = new File(STR."src/main/resources/template/\{filePath}");
             if (file.exists()) {
-                int length = (int) file.length();
-                byte[] bytes = new byte[length];
-                InputStream i = null;
                 try {
-                    i = new FileInputStream(file);
-                    int offset = 0;
-                    while (offset < length) {
-                        int count = i.read(bytes, offset, (length - offset));
-                        offset += count;
-                    }
-                    i.close();
+                    // Чтение содержимого файла шаблона
+                    byte[] bytes = readFileBytes(file);
                     return new Response(response.getStatusCode(), socket, bytes, true);
                 } catch (IOException e) {
                     e.printStackTrace(System.err);
                 }
             }
         }
-        return new Response(response.getStatusCode(), socket, response.getOutput(),false);
+        // Если нет аннотации Template или произошла ошибка при чтении файла, возвращаем данные запроса
+        return new Response(response.getStatusCode(), socket, requestData.getBytes(), false);
     }
-    
+
+    /**
+     * Читает содержимое файла и возвращает его в виде массива байтов
+     */
+    private static byte[] readFileBytes(File file) throws IOException {
+        int length = (int) file.length();
+        byte[] bytes = new byte[length];
+        try (InputStream inputStream = new FileInputStream(file)) {
+            int offset = 0;
+            while (offset < length) {
+                int count = inputStream.read(bytes, offset, (length - offset));
+                if (count >= 0) {
+                    offset += count;
+                } else {
+                    throw new IOException("Unexpected end of file");
+                }
+            }
+        }
+        return bytes;
+    }
+
+
     private static Method findMatchingMethod(String requestUri, HTTP_METHOD httpMethod) throws NoSuchMethodException {
         for (Map.Entry<String, Method> entry : endpointMap.entrySet()) {
             String endpointRegex = entry.getKey();
@@ -108,6 +126,9 @@ public class EndpointMapper {
 
     private static boolean matchesEndpoint(String requestUri, String endpointRegex, HTTP_METHOD httpMethod) {
         String[] parts = endpointRegex.split("\\s+");
+        if (parts.length < 2) {
+            return false;
+        }
         String methodPart = parts[0];
         String regexPart = parts[1];
 

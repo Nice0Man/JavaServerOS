@@ -5,6 +5,7 @@ import com.server.http.request.annotations.EndpointMapping;
 import com.server.http.request.annotations.HttpMethods;
 import com.server.http.request.annotations.RequestParam;
 import com.server.http.request.annotations.Template;
+import com.server.http.response.Html;
 import com.server.http.response.Response;
 import com.server.http.status.HTTP_STATUS_CODE;
 
@@ -20,11 +21,11 @@ public class App {
     @Template(path = "index.html")
     @EndpointMapping(uri = "/", method = GET)
     public static Response helloWorld(){
-        return new Response(HTTP_STATUS_CODE.OK_200);
+        return Html.sendResponse();
     }
 
     @Template(path = "getAllRecords.html")
-    @EndpointMapping(uri = "/csv", method = GET)
+    @EndpointMapping(uri = "/csv/all", method = GET)
     public static Response getAllRecords() {
         // Логика для получения всех записей из CSV файла и отправки ответа
         System.out.println("GET /csv - Получение всех записей из CSV файла");
@@ -48,15 +49,15 @@ public class App {
     }
 
     @Template(path = "updateRecord.html")
-    @EndpointMapping(uri = "/csv/update/{id}", method = PUT)
+    @EndpointMapping(uri = "/csv/update", method = PUT)
     public static Response updateRecord(@RequestParam("id") String id) {
         // Логика для обновления существующей записи в CSV файле по ее идентификатору и отправки ответа
-        System.out.println(STR."PUT /csv/update\{id} - Обновление записи в CSV файле");
+        System.out.println(STR."PUT /cs`v/update\{id} - Обновление записи в CSV файле");
         return new Response(HTTP_STATUS_CODE.OK_200);
     }
 
     @Template(path = "deleteRecord.html")
-    @EndpointMapping(uri = "/csv/delete/{id}", method = DELETE)
+    @EndpointMapping(uri = "/csv/delete", method = DELETE)
     public static Response deleteRecord(@RequestParam("id") String id) {
         // Логика для удаления записи из CSV файла по ее идентификатору и отправки ответа
         System.out.println(STR."DELETE /csv/delete/\{id} - Удаление записи из CSV файла");

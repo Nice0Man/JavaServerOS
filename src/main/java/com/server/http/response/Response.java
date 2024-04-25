@@ -1,13 +1,14 @@
 package com.server.http.response;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.Socket;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.server.http.models.HttpHeader;
@@ -76,14 +77,15 @@ public class Response {
     /**
      * Sets HTTP response header
      */
-    public void responseHeaders() {
+
+    public void responseHeaders(String contentType) {
         SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
         headers = new HttpHeader.Builder()
                 .addHTTP(String.valueOf(this.statusCode.getCode()))
-                .addRow("Content-Type: ", "text/html")
-                .addRow("Date: ", formatter.format(new Date(System.currentTimeMillis())))
-                .addRow("Server: ", "Simple Java Web Server")
-                .addRow("Connection: ", "close")
+                .addRow("Content-Type", contentType)
+                .addRow("Date", formatter.format(new Date(System.currentTimeMillis())))
+                .addRow("Server", "Simple Java Web Server")
+                .addRow("Connection", "close")
                 .build();
     }
 
@@ -91,12 +93,15 @@ public class Response {
     /**
      * Selects the appropriate response view based on the status code
      */
+
     public void responseView() {
-        responseHeaders();
+        responseHeaders("text/html");
+
+//        add other types
         try {
             DataOutputStream outputStream = new DataOutputStream(this.socket.getOutputStream());
             switch (this.statusCode) {
-                case OK_200:
+                case OK_200, ACCEPTED_202:
                     if(isFile) {
                         responseBytes(outputStream, this.bytes);
                     } else {
@@ -119,7 +124,6 @@ public class Response {
         } catch (IOException e) {
             e.printStackTrace(System.err);
         }
-
     }
 
     /**
@@ -130,9 +134,10 @@ public class Response {
      *                     response body
      * @throws IOException
      */
+
     public void responseBytes(DataOutputStream outputStream, byte[] bytes) throws IOException {
         for(String entry : headers.getHeaders()) {
-            outputStream.writeBytes(entry );
+            outputStream.writeBytes(entry);
         }
         outputStream.writeBytes(CRLF);
         outputStream.writeBytes("<!DOCTYPE html><html><head><title>Java Web Server</title></head><body>");
@@ -150,6 +155,7 @@ public class Response {
      * 					   response body
      * @throws IOException
      */
+
     public void responseBytes(DataOutputStream outputStream, String response) throws IOException {
         for(String entry : headers.getHeaders()) {
             outputStream.writeBytes(entry);
