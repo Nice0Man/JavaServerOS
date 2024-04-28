@@ -1,6 +1,7 @@
 package com.server.http.request;
 
 import com.server.http.enums.HTTP_STATUS_CODE;
+import com.server.http.request.annotations.BodyParam;
 import com.server.http.request.annotations.EndpointMapping;
 import com.server.http.enums.HTTP_METHOD;
 import com.server.http.request.annotations.RequestParam;
@@ -16,10 +17,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.ByteBuffer;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -64,26 +63,44 @@ public class EndpointMapper {
         response.setStatusCode(HTTP_STATUS_CODE.OK_200);
     }
 
-    public static void handleRequest(Socket socket, String requestUri, HTTP_METHOD httpMethod)
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
+    public static void handleRequest(
+            Socket socket,
+            String requestUri,
+            HTTP_METHOD httpMethod
+    ) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
         Method method = findMatchingMethod(requestUri, httpMethod);
         if (method != null) {
-            Object[] args = extractArgsFromUri(requestUri, method);
+            Object[] args = extractArgsFromMethod(requestUri, method, socket);
             AbstractResponse response = (AbstractResponse) method.invoke(null, args);
             if (response != null) {
                 setResponseParameters(response, socket);
                 EndpointMapping annotation = method.getAnnotation(EndpointMapping.class);
                 switch (annotation.type()){
                     case HTML -> {
-                        Template templateAnnotation = method.getAnnotation(Template.class);
                         Html htmlResponse = new Html((Html) response);
-                        handleHtmlResponse(htmlResponse, templateAnnotation.path());
-                        socket.close();
+                        if (htmlResponse.getBytes() != null) {
+                            handleHtmlResponse(htmlResponse, htmlResponse.getBytes());
+                        }
+                        else {
+                            Template templateAnnotation = method.getAnnotation(Template.class);
+                            File file = new File(STR."src/main/resources/template/\{templateAnnotation.path()}");
+                            if (file.exists()) {
+                                try {
+                                    byte[] bytes = readFileBytes(file);
+                                    handleHtmlResponse(htmlResponse, bytes);
+                                } catch (IOException e) {
+                                    e.printStackTrace(System.err);
+                                }
+                            } else {
+                                String errorString = STR."<p>FILE \{templateAnnotation.path()} NOT FOUND!</p>";
+                                htmlResponse.setStatusCode(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR_500);
+                                handleHtmlResponse(htmlResponse, errorString.getBytes());
+                            }
+                        }
                     }
                     case JSON -> {
                         Json jsonResponse = new Json((Json) response);
                         handleJsonResponse(jsonResponse);
-                        socket.close();
                     }
                     default -> {
                         return;
@@ -104,24 +121,11 @@ public class EndpointMapper {
         }
     }
 
-    private static void handleHtmlResponse(Html response, String filePath) throws IOException {
-        File file = new File(STR."src/main/resources/template/\{filePath}");
+    private static void handleHtmlResponse(Html response, byte[] bytes) throws IOException {
         DataOutputStream outputStream = new DataOutputStream(response.getSocket().getOutputStream());
-        if (file.exists()) {
-            try {
-                byte[] bytes = readFileBytes(file);
-                response.sendByteResponse(outputStream, bytes);
-            } catch (IOException e) {
-                e.printStackTrace(System.err);
-            }
-        } else {
-           response.sendError(outputStream, HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR_500);
-        }
+        response.sendByteResponse(outputStream, bytes);
     }
 
-    /**
-     * Читает содержимое файла и возвращает его в виде массива байтов
-     */
     private static byte[] readFileBytes(File file) throws IOException {
         int length = (int) file.length();
         byte[] bytes = new byte[length];
@@ -172,15 +176,16 @@ public class EndpointMapper {
         return uri.replaceAll("\\{([^}]*)}", "(\\\\w+|\\\\d+)");
     }
 
-    private static Object[] extractArgsFromUri(String requestUri, Method method) {
+    private static Object[] extractArgsFromMethod(String requestUri, Method method, Socket socket) throws IOException {
         Parameter[] parameters = method.getParameters();
         List<Object> args = new ArrayList<>();
         String[] uriParts = requestUri.split("/");
         String[] mappedUriParts = method.getAnnotation(EndpointMapping.class).uri().split("/");
         for (Parameter parameter : parameters) {
-            RequestParam paramAnnotation = parameter.getAnnotation(RequestParam.class);
-            if (paramAnnotation != null) {
-                String paramName = paramAnnotation.value();
+            RequestParam requestParamAnnotation = parameter.getAnnotation(RequestParam.class);
+            BodyParam bodyParamAnnotation = parameter.getAnnotation(BodyParam.class);
+            if (requestParamAnnotation != null) {
+                String paramName = requestParamAnnotation.value();
                 for (int j = 0; j < mappedUriParts.length; j++) {
                     if (mappedUriParts[j].startsWith("{") && mappedUriParts[j].endsWith("}")) {
                         String mappedParamName = mappedUriParts[j].substring(1, mappedUriParts[j].length() - 1);
@@ -190,9 +195,42 @@ public class EndpointMapper {
                         }
                     }
                 }
+            } else if (bodyParamAnnotation != null) {
+                String bodyData = readRequestBody(socket);
+                args.add(bodyData);
             }
         }
         return args.toArray();
+    }
+
+    private static String readRequestBody(Socket socket) throws IOException {
+        StringBuilder requestBody = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        String line;
+
+        boolean headerPassed = false;
+
+        // Пропускаем заголовки запроса
+        while ((line = reader.readLine()) != null) {
+            System.out.println(line);
+            if (line.isEmpty()) {
+                headerPassed = true;
+                break;
+            }
+        }
+
+        // Считываем тело запроса
+        if (headerPassed) {
+            while (reader.ready()) { // Проверяем доступность данных для чтения
+                line = reader.readLine();
+                if (line != null) {
+                    requestBody.append(line);
+                } else {
+                    break; // Выход из цикла, если достигнут конец потока
+                }
+            }
+        }
+        return requestBody.toString();
     }
 }
 

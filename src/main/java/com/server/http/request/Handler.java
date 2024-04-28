@@ -4,6 +4,7 @@ import com.server.http.enums.HTTP_METHOD;
 import com.server.http.response.AbstractResponse;
 import com.server.http.response.Html;
 import com.server.http.enums.HTTP_STATUS_CODE;
+import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,6 +28,7 @@ public class Handler implements Runnable {
         this.socket = socket;
     }
 
+    @SneakyThrows
     @Override
     public void run() {
         processRequest();
@@ -36,22 +38,24 @@ public class Handler implements Runnable {
      * Build the response header and body
      *
      */
-    private void processRequest() {
+    private void processRequest() throws IOException {
         String uri = null;
         try {
             BufferedReader in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
             String line = in.readLine();
+            System.out.println(line);
             if (line != null) {
                 logger.info(line);
                 String[] parts = line.split("\\s+");
                 String requestMethod = parts[0];
                 uri = parts[1];
                 HTTP_METHOD httpMethod = HTTP_METHOD.getMethod(requestMethod);
-                System.out.println(httpMethod);
                 switch (httpMethod) {
                     case GET, POST, PUT, DELETE -> EndpointMapper.handleRequest(this.socket, uri, httpMethod);
                     default -> handleUnsupportedMethod();
                 }
+//                System.out.println(readRequestBody());
+                socket.close();
             } else {
                 logger.error("Received null request line");
             }
@@ -81,16 +85,15 @@ public class Handler implements Runnable {
         return new Html(socket, HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405);
     }
 
-
-    public static String readRequestBody(Socket socket) throws IOException {
+    private String readRequestBody() throws IOException {
         StringBuilder requestBody = new StringBuilder();
-        InputStream inputStream = socket.getInputStream();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         String line;
         boolean headerPassed = false;
 
         // Пропускаем заголовки запроса
         while ((line = reader.readLine()) != null) {
+            System.out.println(line);
             if (line.isEmpty()) {
                 headerPassed = true;
                 break;
@@ -99,8 +102,14 @@ public class Handler implements Runnable {
 
         // Считываем тело запроса
         if (headerPassed) {
-            while ((line = reader.readLine()) != null) {
-                requestBody.append(line);
+            while (reader.ready()) { // Проверяем доступность данных для чтения
+                line = reader.readLine();
+                System.out.println(STR."Body line: \{line}");
+                if (line != null) {
+                    requestBody.append(line);
+                } else {
+                    break; // Выход из цикла, если достигнут конец потока
+                }
             }
         }
         return requestBody.toString();

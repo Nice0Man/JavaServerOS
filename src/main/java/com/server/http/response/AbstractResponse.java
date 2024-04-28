@@ -20,6 +20,7 @@ public abstract class AbstractResponse {
 
     protected static final String CRLF = "\r\n";
     protected HttpHeader headers;
+    protected String body;
 
     protected AbstractResponse(Socket socket, HTTP_STATUS_CODE statusCode, CONTENT_TYPE... contentTypes) throws IOException {
         this.socket = socket;
@@ -50,6 +51,10 @@ public abstract class AbstractResponse {
                 .addRow("Server", "Simple Java Web Server")
                 .addRow("Connection", "close")
                 .build();
+    }
+
+    protected String setBody(){
+        return null;
     }
 
     protected void writeHeaders(DataOutputStream outputStream) throws IOException {

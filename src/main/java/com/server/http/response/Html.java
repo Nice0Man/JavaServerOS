@@ -14,6 +14,7 @@ import java.net.Socket;
 @EqualsAndHashCode(callSuper = true)
 public class Html extends AbstractResponse {
     private HTTP_STATUS_CODE statusCode;
+    private byte[] bytes;
 
     public Html(HTTP_STATUS_CODE code){
         this.statusCode = code;
@@ -27,8 +28,17 @@ public class Html extends AbstractResponse {
         super(other.getSocket(), other.getStatusCode(), other.getHeaders());
     }
 
+    public Html(HTTP_STATUS_CODE code, String s) {
+        this.statusCode = code;
+        this.bytes = s.getBytes();
+    }
+
     public static AbstractResponse renderTemplate(){
         return new Html(HTTP_STATUS_CODE.OK_200);
+    }
+
+    public static AbstractResponse renderTemplate(String s) throws IOException {
+        return new Html(HTTP_STATUS_CODE.OK_200, s);
     }
 
     public void sendStringResponse(DataOutputStream outputStream, String content) throws IOException {

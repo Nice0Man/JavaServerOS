@@ -10,8 +10,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 
 public class ApplicationEntryPoint implements Serializable {
@@ -40,21 +39,28 @@ public class ApplicationEntryPoint implements Serializable {
         }
     }
 
-    public static void runApp(String[] args) {
+    public static void runApp(String[] args) throws IOException {
         setUp(args);
         ExecutorService requestHandler = Executors.newFixedThreadPool(Config.WORKER_THREADS);
 
-        try {
-            @SuppressWarnings("resource")
-            ServerSocket serverSocket = new ServerSocket(Config.PORT);
-            //noinspection InfiniteLoopStatement
-            while (true) {
-                Socket socket = serverSocket.accept();
-                Listener.getInstance().addRequestToQueue(socket);
-                requestHandler.execute(new Handler(Listener.getInstance().handleRequest()));
+        @SuppressWarnings("resource")
+        ServerSocket serverSocket = new ServerSocket(Config.PORT);
+        //noinspection InfiniteLoopStatement
+        while (true) {
+            Socket socket = serverSocket.accept();
+            Listener.getInstance().addRequestToQueue(socket);
+
+            // После добавления задачи в очередь, запускаем ее обработку в Handler
+            Future<?> future = requestHandler.submit(new Handler(Listener.getInstance().handleRequest()));
+
+            // Устанавливаем таймаут выполнения в 10 секунд
+            try {
+                future.get(10, TimeUnit.SECONDS);
+            } catch (TimeoutException | InterruptedException | ExecutionException e) {
+                // Если время выполнения превышает 10 секунд, отменяем задачу и завершаем поток
+                future.cancel(true);
+                logger.warn("Request processing timeout exceeded.");
             }
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
         }
     }
 }

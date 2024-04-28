@@ -1,10 +1,13 @@
 package editor;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import editor.commands.*;
 import lombok.Data;
 import editor.commands.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @Data
@@ -21,6 +24,17 @@ public class CSVApp {
             System.out.println();
         });
     }
+
+    public String convertDataToJson(List<String[]> data) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            return objectMapper.writeValueAsString(data);
+        } catch (IOException e) {
+            e.printStackTrace(System.err);
+            return null;
+        }
+    }
+
     public void create(String[] strings){
         executeCommand(new CreateCommand(this, activeEditor, strings));
     }
@@ -36,7 +50,6 @@ public class CSVApp {
     public void delete(int rowIndex){
         executeCommand(new DeleteCommand(this, activeEditor, rowIndex));
     }
-
 
 
     private void executeCommand(Command command){
