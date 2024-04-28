@@ -12,13 +12,9 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 
+import static com.server.http.enums.HTTP_METHOD.POST;
+import static com.server.http.enums.HTTP_METHOD.PUT;
 
-/**
- * Processes request on its in thread and returns a response to the client
- *
- * @author Nice0Man
- *
- */
 public class Handler implements Runnable {
     private final Socket socket;
     private AbstractResponse response;
@@ -34,16 +30,11 @@ public class Handler implements Runnable {
         processRequest();
     }
 
-    /**
-     * Build the response header and body
-     *
-     */
     private void processRequest() throws IOException {
         String uri = null;
         try {
             BufferedReader in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
             String line = in.readLine();
-            System.out.println(line);
             if (line != null) {
                 logger.info(line);
                 String[] parts = line.split("\\s+");
@@ -51,17 +42,22 @@ public class Handler implements Runnable {
                 uri = parts[1];
                 HTTP_METHOD httpMethod = HTTP_METHOD.getMethod(requestMethod);
                 switch (httpMethod) {
-                    case GET, POST, PUT, DELETE -> EndpointMapper.handleRequest(this.socket, uri, httpMethod);
+                    case GET, POST, PUT, DELETE -> {
+                        if (httpMethod == POST || httpMethod == PUT) {
+                            String requestBody = readRequestBody(in);
+                            // Process request body as needed...
+                            System.out.println(STR."Request body: \{requestBody}");
+                        }
+                        EndpointMapper.handleRequest(this.socket, uri, httpMethod);
+                    }
                     default -> handleUnsupportedMethod();
                 }
-//                System.out.println(readRequestBody());
                 socket.close();
             } else {
                 logger.error("Received null request line");
             }
         } catch (NoSuchMethodException e) {
             logger.error("{}: (404) {}", uri, HTTP_STATUS_CODE.NOT_FOUND_404);
-//            response = new Html(this.socket, HTTP_STATUS_CODE.NOT_FOUND_404);
         } catch (IllegalAccessException | InvocationTargetException | RuntimeException e) {
             logger.error("Error processing request: {}", e.getMessage());
         } catch (IOException e) {
@@ -69,9 +65,6 @@ public class Handler implements Runnable {
         }
     }
 
-    /**
-     * Handles unsupported HTTP methods
-     */
     private void handleUnsupportedMethod() {
         logger.error("Unsupported HTTP method");
         try {
@@ -85,31 +78,37 @@ public class Handler implements Runnable {
         return new Html(socket, HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405);
     }
 
-    private String readRequestBody() throws IOException {
+    private String readRequestBody(BufferedReader reader) throws IOException {
         StringBuilder requestBody = new StringBuilder();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         String line;
         boolean headerPassed = false;
+        int contentLength = -1; // По умолчанию не задано
 
-        // Пропускаем заголовки запроса
+        // Пропускаем заголовки запроса и ищем параметр Content-Length
         while ((line = reader.readLine()) != null) {
-            System.out.println(line);
             if (line.isEmpty()) {
                 headerPassed = true;
                 break;
             }
+            // Если строка содержит Content-Length, извлекаем его значение
+            if (line.startsWith("Content-Length:")) {
+                contentLength = Integer.parseInt(line.split(":")[1].trim());
+            }
         }
 
-        // Считываем тело запроса
-        if (headerPassed) {
-            while (reader.ready()) { // Проверяем доступность данных для чтения
-                line = reader.readLine();
-                System.out.println(STR."Body line: \{line}");
-                if (line != null) {
-                    requestBody.append(line);
-                } else {
-                    break; // Выход из цикла, если достигнут конец потока
+        // Считываем тело запроса с учетом Content-Length
+        if (headerPassed && contentLength > 0) {
+            int bytesRead = 0;
+            char[] buffer = new char[1024]; // Буфер для чтения байтов
+            while (bytesRead < contentLength) {
+                int bytesToRead = Math.min(contentLength - bytesRead, buffer.length);
+                int bytesReadNow = reader.read(buffer, 0, bytesToRead);
+                if (bytesReadNow == -1) {
+                    break; // Если достигнут конец потока
                 }
+                String bodyLine = new String(buffer, 0, bytesReadNow);
+                requestBody.append(bodyLine);
+                bytesRead += bytesReadNow;
             }
         }
         return requestBody.toString();

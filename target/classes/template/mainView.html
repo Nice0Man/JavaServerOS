@@ -4,6 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Операции с записями CSV файла</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f2f2f2;
+        }
+        section {
+            margin-bottom: 20px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-top: 0;
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+        }
+        input[type="text"] {
+            padding: 5px;
+            margin-bottom: 10px;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+            width: 300px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #allRecordsContainer, #singleRecordContainer {
+            margin-top: 10px;
+        }
+        p {
+            margin: 5px 0;
+        }
+    </style>
 </head>
 <body>
 
@@ -36,6 +82,7 @@
     <h1>Обновление записи в CSV файле по идентификатору</h1>
     <label for="updateRecordId">Введите идентификатор записи для обновления:</label>
     <input type="text" id="updateRecordId" name="updateRecordId">
+    </br>
     <label for="updatedRecordData">Введите новые данные для обновления записи:</label>
     <input type="text" id="updatedRecordData" name="updatedRecordData">
     <button onclick="updateRecord()">Обновить запись</button>
@@ -49,40 +96,33 @@
     <button onclick="deleteRecord()">Удалить запись</button>
 </section>
 
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
     function getAllRecords() {
-        // Send GET request to /csv/all endpoint to retrieve all records
-        fetch('/csv/all')
-        .then(response => response.json())
-        .then(data => {
+        axios.get('/csv/all')
+        .then(response => {
             const allRecordsContainer = document.getElementById('allRecordsContainer');
-            allRecordsContainer.innerHTML = `<h2>Все записи из CSV файла:</h2><p>${JSON.stringify(data)}</p>`;
+            allRecordsContainer.innerHTML = '<h2>Все записи из CSV файла:</h2>';
+            response.data.forEach(record => {
+                allRecordsContainer.innerHTML += `<p>${JSON.stringify(record)}</p>`;
+            });
         })
         .catch(error => console.error('Error:', error));
     }
 
     function getRecordById() {
         const recordId = document.getElementById('recordId').value;
-        // Send GET request to /csv/{id} endpoint to retrieve record by ID
-        fetch(`/csv/${recordId}`)
-        .then(response => response.json())
-        .then(data => {
+        axios.get(`/csv/${recordId}`)
+        .then(response => {
             const singleRecordContainer = document.getElementById('singleRecordContainer');
-            singleRecordContainer.innerHTML = `<h2>Запись с идентификатором ${recordId}:</h2><p>${JSON.stringify(data)}</p>`;
+            singleRecordContainer.innerHTML = `<h2>Запись с идентификатором ${recordId}:</h2><p>${JSON.stringify(response.data)}</p>`;
         })
         .catch(error => console.error('Error:', error));
     }
 
     function addNewRecord() {
         const newRecordData = document.getElementById('newRecordData').value;
-        // Send POST request to /csv endpoint to add new record
-        fetch('/csv', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ data: newRecordData })
-        })
+        axios.post('/csv', { data: newRecordData })
         .then(response => console.log('New record added successfully'))
         .catch(error => console.error('Error:', error));
     }
@@ -90,24 +130,14 @@
     function updateRecord() {
         const updateRecordId = document.getElementById('updateRecordId').value;
         const updatedRecordData = document.getElementById('updatedRecordData').value;
-        // Send PUT request to /csv/{id} endpoint with updatedRecordData
-        fetch(`/csv/${updateRecordId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ data: updatedRecordData })
-        })
+        axios.put(`/csv/${updateRecordId}`, { data: updatedRecordData })
         .then(response => console.log('Record updated successfully'))
         .catch(error => console.error('Error:', error));
     }
 
     function deleteRecord() {
         const deleteRecordId = document.getElementById('deleteRecordId').value;
-        // Send DELETE request to /csv/{id} endpoint to delete record by ID
-        fetch(`/csv/${deleteRecordId}`, {
-            method: 'DELETE'
-        })
+        axios.delete(`/csv/${deleteRecordId}`)
         .then(response => console.log('Record deleted successfully'))
         .catch(error => console.error('Error:', error));
     }

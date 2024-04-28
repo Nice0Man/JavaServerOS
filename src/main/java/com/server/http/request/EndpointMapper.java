@@ -176,7 +176,7 @@ public class EndpointMapper {
         return uri.replaceAll("\\{([^}]*)}", "(\\\\w+|\\\\d+)");
     }
 
-    private static Object[] extractArgsFromMethod(String requestUri, Method method, Socket socket) throws IOException {
+    private static Object[] extractArgsFromMethod(String requestUri, Method method, String jsonBody) throws IOException {
         Parameter[] parameters = method.getParameters();
         List<Object> args = new ArrayList<>();
         String[] uriParts = requestUri.split("/");
@@ -196,41 +196,10 @@ public class EndpointMapper {
                     }
                 }
             } else if (bodyParamAnnotation != null) {
-                String bodyData = readRequestBody(socket);
-                args.add(bodyData);
+                args.add(jsonBody);
             }
         }
         return args.toArray();
-    }
-
-    private static String readRequestBody(Socket socket) throws IOException {
-        StringBuilder requestBody = new StringBuilder();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        String line;
-
-        boolean headerPassed = false;
-
-        // Пропускаем заголовки запроса
-        while ((line = reader.readLine()) != null) {
-            System.out.println(line);
-            if (line.isEmpty()) {
-                headerPassed = true;
-                break;
-            }
-        }
-
-        // Считываем тело запроса
-        if (headerPassed) {
-            while (reader.ready()) { // Проверяем доступность данных для чтения
-                line = reader.readLine();
-                if (line != null) {
-                    requestBody.append(line);
-                } else {
-                    break; // Выход из цикла, если достигнут конец потока
-                }
-            }
-        }
-        return requestBody.toString();
     }
 }
 
