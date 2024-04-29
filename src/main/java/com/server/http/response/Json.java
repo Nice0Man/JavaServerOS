@@ -42,4 +42,23 @@ public class Json extends AbstractResponse {
         writeBody(outputStream, jsonData.getBytes());
         flush(outputStream);
     }
+
+    /**
+     *
+     */
+    @Override
+    public void send() {
+        try {
+            DataOutputStream outputStream = new DataOutputStream(getSocket().getOutputStream());
+            if (getJsonData() != null) {
+                sendResponse(outputStream);
+            } else {
+                setStatusCode(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR_500);
+                sendResponse(outputStream);
+            }
+        } catch (IOException e) {
+            e.printStackTrace(System.err);
+        }
+    }
+
 }

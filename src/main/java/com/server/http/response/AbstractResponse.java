@@ -80,4 +80,6 @@ public abstract class AbstractResponse {
             e.printStackTrace(System.err);
         }
     }
+
+    public abstract void send();
 }

@@ -34,12 +34,12 @@ public class App {
 
 
     @Template(path = "mainView.html")
-    @EndpointMapping(uri = "/csv", type = HTML)
+    @EndpointMapping(uri = "/csv")
     public static AbstractResponse addRecord() {
         return Html.renderTemplate();
     }
 
-    @EndpointMapping(uri = "/csv/all", method = GET, type = JSON)
+    @EndpointMapping(uri = "/csv/all", method = GET)
     public static AbstractResponse getAllRecords() throws IOException {
         CSVEditor editor = new CSVEditor();
         csvApp.setActiveEditor(editor);
@@ -50,7 +50,7 @@ public class App {
     }
 
 
-    @EndpointMapping(uri = "/csv/{id}", method = GET , type = JSON)
+    @EndpointMapping(uri = "/csv/{id}", method = GET)
     public AbstractResponse getRecordById(@RequestParam("id") String id) throws IOException {
         CSVEditor editor = new CSVEditor();
         csvApp.setActiveEditor(editor);
@@ -63,7 +63,7 @@ public class App {
     }
 
 
-    @EndpointMapping(uri = "/csv/{id}", method = PUT, type = HTML)
+    @EndpointMapping(uri = "/csv/{id}", method = PUT)
     public AbstractResponse updateRecord(
             @RequestParam("id") String id,
             @BodyParam("body") String body
@@ -78,7 +78,7 @@ public class App {
     }
 
 
-    @EndpointMapping(uri = "/csv/{id}", method = DELETE, type = JSON)
+    @EndpointMapping(uri = "/csv/{id}", method = DELETE)
     public AbstractResponse deleteRecord(@RequestParam("id") String id) throws IOException {
 
         String json = "{\"id\":1,\"text\":\"Sample text\",\"time\":\"2022-04-09T12:30:00\"}";

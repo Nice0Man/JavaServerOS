@@ -1,11 +1,10 @@
 package com.server.http.request;
 
+import com.server.http.enums.HTTP_METHOD;
 import com.server.http.enums.HTTP_STATUS_CODE;
 import com.server.http.request.annotations.BodyParam;
 import com.server.http.request.annotations.EndpointMapping;
-import com.server.http.enums.HTTP_METHOD;
 import com.server.http.request.annotations.RequestParam;
-import com.server.http.request.annotations.Template;
 import com.server.http.response.AbstractResponse;
 import com.server.http.response.Html;
 import com.server.http.response.Json;
@@ -17,8 +16,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,89 +59,42 @@ public class EndpointMapper {
         }
     }
 
-    private static void setResponseParameters(AbstractResponse response, Socket socket){
-        response.setSocket(socket);
-        response.setStatusCode(HTTP_STATUS_CODE.OK_200);
-    }
-
-    public static void handleRequest(
-            Socket socket,
-            String requestUri,
-            HTTP_METHOD httpMethod
-    ) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
+    public static void handleRequest(Socket socket, String requestUri, HTTP_METHOD httpMethod, String jsonBody)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
         Method method = findMatchingMethod(requestUri, httpMethod);
         if (method != null) {
-            Object[] args = extractArgsFromMethod(requestUri, method, socket);
+            Object[] args = extractArgsFromMethod(requestUri, method, jsonBody);
             AbstractResponse response = (AbstractResponse) method.invoke(null, args);
             if (response != null) {
                 setResponseParameters(response, socket);
-                EndpointMapping annotation = method.getAnnotation(EndpointMapping.class);
-                switch (annotation.type()){
-                    case HTML -> {
-                        Html htmlResponse = new Html((Html) response);
-                        if (htmlResponse.getBytes() != null) {
-                            handleHtmlResponse(htmlResponse, htmlResponse.getBytes());
-                        }
-                        else {
-                            Template templateAnnotation = method.getAnnotation(Template.class);
-                            File file = new File(STR."src/main/resources/template/\{templateAnnotation.path()}");
-                            if (file.exists()) {
-                                try {
-                                    byte[] bytes = readFileBytes(file);
-                                    handleHtmlResponse(htmlResponse, bytes);
-                                } catch (IOException e) {
-                                    e.printStackTrace(System.err);
-                                }
-                            } else {
-                                String errorString = STR."<p>FILE \{templateAnnotation.path()} NOT FOUND!</p>";
-                                htmlResponse.setStatusCode(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR_500);
-                                handleHtmlResponse(htmlResponse, errorString.getBytes());
-                            }
-                        }
-                    }
-                    case JSON -> {
-                        Json jsonResponse = new Json((Json) response);
-                        handleJsonResponse(jsonResponse);
-                    }
-                    default -> {
-                        return;
-                    }
-                }
+                handleResponse(response);
             }
         } else {
             throw new NoSuchMethodException(STR."Endpoint not found for request URI: \{requestUri}");
         }
     }
 
+    private static void handleResponse(AbstractResponse response) throws IOException {
+        if (response instanceof Html) {
+            handleHtmlResponse((Html) response);
+        } else if (response instanceof Json) {
+            handleJsonResponse((Json) response);
+        }
+    }
+
     private static void handleJsonResponse(Json response) throws IOException {
         DataOutputStream outputStream = new DataOutputStream(response.getSocket().getOutputStream());
-        try {
-            response.sendResponse(outputStream);
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
-        }
+        response.sendResponse(outputStream);
     }
 
-    private static void handleHtmlResponse(Html response, byte[] bytes) throws IOException {
+    private static void handleHtmlResponse(Html response) throws IOException {
         DataOutputStream outputStream = new DataOutputStream(response.getSocket().getOutputStream());
-        response.sendByteResponse(outputStream, bytes);
+        response.sendResponse(outputStream);
     }
 
-    private static byte[] readFileBytes(File file) throws IOException {
-        int length = (int) file.length();
-        byte[] bytes = new byte[length];
-        try (InputStream inputStream = new FileInputStream(file)) {
-            int offset = 0;
-            while (offset < length) {
-                int count = inputStream.read(bytes, offset, (length - offset));
-                if (count >= 0) {
-                    offset += count;
-                } else {
-                    throw new IOException("Unexpected end of file");
-                }
-            }
-        }
-        return bytes;
+    private static void setResponseParameters(AbstractResponse response, Socket socket) {
+        response.setSocket(socket);
+        response.setStatusCode(HTTP_STATUS_CODE.OK_200);
     }
 
     private static Method findMatchingMethod(String requestUri, HTTP_METHOD httpMethod) throws NoSuchMethodException {
@@ -172,11 +126,11 @@ public class EndpointMapper {
     }
 
     private static String convertUriToRegex(String uri) {
-        // Escape special characters in URI and replace parameters with regex patterns
         return uri.replaceAll("\\{([^}]*)}", "(\\\\w+|\\\\d+)");
     }
 
-    private static Object[] extractArgsFromMethod(String requestUri, Method method, String jsonBody) throws IOException {
+    public static Object[] extractArgsFromMethod(String requestUri, Method method, String jsonBody)
+            throws IOException {
         Parameter[] parameters = method.getParameters();
         List<Object> args = new ArrayList<>();
         String[] uriParts = requestUri.split("/");
@@ -196,10 +150,9 @@ public class EndpointMapper {
                     }
                 }
             } else if (bodyParamAnnotation != null) {
-                args.add(jsonBody);
+                args.add(RequestHandler.JsonParser.parse(jsonBody, parameter.getType()));
             }
         }
         return args.toArray();
     }
 }
-

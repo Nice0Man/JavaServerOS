@@ -1,23 +1,21 @@
 package com.server.http.request;
 
 import com.server.http.enums.HTTP_METHOD;
+import com.server.http.enums.HTTP_STATUS_CODE;
 import com.server.http.response.AbstractResponse;
 import com.server.http.response.Html;
-import com.server.http.enums.HTTP_STATUS_CODE;
 import lombok.SneakyThrows;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.net.Socket;
 
-import static com.server.http.enums.HTTP_METHOD.POST;
-import static com.server.http.enums.HTTP_METHOD.PUT;
-
 public class Handler implements Runnable {
     private final Socket socket;
-    private AbstractResponse response;
     private static final Logger logger = LogManager.getLogger(Handler.class);
 
     public Handler(Socket socket) {
@@ -30,7 +28,7 @@ public class Handler implements Runnable {
         processRequest();
     }
 
-    private void processRequest() throws IOException {
+    private void processRequest() {
         String uri = null;
         try {
             BufferedReader in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
@@ -41,41 +39,26 @@ public class Handler implements Runnable {
                 String requestMethod = parts[0];
                 uri = parts[1];
                 HTTP_METHOD httpMethod = HTTP_METHOD.getMethod(requestMethod);
-                switch (httpMethod) {
-                    case GET, POST, PUT, DELETE -> {
-                        if (httpMethod == POST || httpMethod == PUT) {
-                            String requestBody = readRequestBody(in);
-                            // Process request body as needed...
-                            System.out.println(STR."Request body: \{requestBody}");
-                        }
-                        EndpointMapper.handleRequest(this.socket, uri, httpMethod);
-                    }
-                    default -> handleUnsupportedMethod();
+                String requestBody = "";
+                if (httpMethod == HTTP_METHOD.POST || httpMethod == HTTP_METHOD.PUT) {
+                    requestBody = readRequestBody(in);
+                    // Process request body as needed...
+                    System.out.println(STR."Request body: \{requestBody}");
                 }
+                AbstractResponse response = RequestHandler.handleRequest(socket, uri, httpMethod, requestBody);
+                response.send();
                 socket.close();
             } else {
                 logger.error("Received null request line");
             }
-        } catch (NoSuchMethodException e) {
-            logger.error("{}: (404) {}", uri, HTTP_STATUS_CODE.NOT_FOUND_404);
-        } catch (IllegalAccessException | InvocationTargetException | RuntimeException e) {
-            logger.error("Error processing request: {}", e.getMessage());
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
+        } catch (IOException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+            logger.error("Error processing request for URI {}: {}", uri, e.getMessage());
+            try {
+                sendErrorResponse(socket);
+            } catch (IOException ioException) {
+                logger.error("Error sending error response: {}", ioException.getMessage());
+            }
         }
-    }
-
-    private void handleUnsupportedMethod() {
-        logger.error("Unsupported HTTP method");
-        try {
-            response = sendErrorResponse();
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
-        }
-    }
-
-    private AbstractResponse sendErrorResponse() throws IOException {
-        return new Html(socket, HTTP_STATUS_CODE.METHOD_NOT_ALLOWED_405);
     }
 
     private String readRequestBody(BufferedReader reader) throws IOException {
@@ -112,5 +95,11 @@ public class Handler implements Runnable {
             }
         }
         return requestBody.toString();
+    }
+
+    private void sendErrorResponse(Socket socket) throws IOException {
+        AbstractResponse errorResponse = new Html(socket, HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR_500);
+        errorResponse.send();
+        socket.close();
     }
 }

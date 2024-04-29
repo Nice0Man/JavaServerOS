@@ -41,21 +41,36 @@ public class Html extends AbstractResponse {
         return new Html(HTTP_STATUS_CODE.OK_200, s);
     }
 
-    public void sendStringResponse(DataOutputStream outputStream, String content) throws IOException {
+    public void sendResponse(DataOutputStream outputStream) throws IOException {
         setHeaders(CONTENT_TYPE.TEXT_HTML);
         writeHeaders(outputStream);
-        writeBody(outputStream, content.getBytes());
-        flush(outputStream);
-    }
-
-    public void sendByteResponse(DataOutputStream outputStream, byte[] data) throws IOException {
-        setHeaders(CONTENT_TYPE.TEXT_HTML);
-        writeHeaders(outputStream);
-        writeBody(outputStream, data);
+        writeBody(outputStream, bytes);
         flush(outputStream);;
     }
 
     public void sendError(DataOutputStream outputStream,HTTP_STATUS_CODE httpStatusCode) throws IOException {
-        sendStringResponse(outputStream, STR."<h1> \{httpStatusCode}</h1>");
+        String template = STR."<h1> \{httpStatusCode}</h1>";
+        setBytes(template.getBytes());
+        sendResponse(outputStream);
+    }
+
+    /**
+     *
+     */
+    @Override
+    public void send() {
+        try {
+            DataOutputStream outputStream = new DataOutputStream(getSocket().getOutputStream());
+            if (getBytes() != null) {
+                sendResponse(outputStream);
+            } else {
+                setStatusCode(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR_500);
+                String template = "<html><body><h1>Page Not Found</h1></body></html>";
+                setBytes(template.getBytes());
+                sendResponse(outputStream);
+            }
+        } catch (IOException e) {
+            e.printStackTrace(System.err);
+        }
     }
 }

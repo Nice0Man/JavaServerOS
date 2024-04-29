@@ -13,5 +13,4 @@ import java.lang.annotation.Target;
 public @interface EndpointMapping {
     String uri() default "/";
     HTTP_METHOD method() default HTTP_METHOD.GET;
-    RESPONSE_TYPE type() default RESPONSE_TYPE.HTML;
 }
