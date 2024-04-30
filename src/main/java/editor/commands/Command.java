@@ -3,6 +3,7 @@ package editor.commands;
 import editor.CSVApp;
 import editor.CSVEditor;
 
+import java.io.IOException;
 import java.util.*;
 
 // Абстрактный класс Command определяет общий интерфейс для всех конкретных команд.
@@ -24,11 +25,11 @@ public abstract class Command {
     }
 
     // Отмена операции и восстановление резервной копии данных CSV
-    public void undo(){
+    public void undo() throws IOException {
         csvEditor.setDataList(backup);
     }
 
     // Выполнение команды
-    public abstract boolean execute();
+    public abstract boolean execute() throws IOException;
 }
 

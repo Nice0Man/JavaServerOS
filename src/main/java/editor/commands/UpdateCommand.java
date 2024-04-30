@@ -3,6 +3,8 @@ package editor.commands;
 import editor.CSVApp;
 import editor.CSVEditor;
 
+import java.io.IOException;
+
 // Конкретная команда для обновления записи в CSV файле
 public class UpdateCommand extends Command {
     private final int rowIndex;
@@ -15,7 +17,7 @@ public class UpdateCommand extends Command {
     }
 
     @Override
-    public boolean execute() {
+    public boolean execute() throws IOException {
         saveBackup();
         csvEditor.updateData(rowIndex, strings);
         return true;

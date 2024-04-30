@@ -1,5 +1,6 @@
 package com.server.http.request;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.server.http.enums.HTTP_METHOD;
 import com.server.http.enums.HTTP_STATUS_CODE;
@@ -16,8 +17,14 @@ public class RequestHandler {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     protected static class JsonParser {
-        public static <T> T parse(String json, Class<T> valueType) throws IOException {
-            return objectMapper.readValue(json, valueType);
+        public static <T> T parse(String json, String key, Class<T> valueType) throws IOException {
+            JsonNode rootNode = objectMapper.readTree(json);
+            JsonNode valueNode = rootNode.get(key);
+            if (valueNode != null) {
+                return objectMapper.treeToValue(valueNode, valueType);
+            } else {
+                throw new IllegalArgumentException(STR."Key '\{key}' not found in JSON");
+            }
         }
     }
 
@@ -59,7 +66,7 @@ public class RequestHandler {
     public static AbstractResponse handlePutRequest(Socket socket, String uri, String requestBody)
             throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
         // Логика обработки PUT запроса
-        AbstractResponse handledRequest = EndpointMapper.handleRequest(uri, HTTP_METHOD.POST, requestBody);
+        AbstractResponse handledRequest = EndpointMapper.handleRequest(uri, HTTP_METHOD.PUT, requestBody);
         if (handledRequest != null) {
             if (handledRequest.getStatusCode() == null)
                 handledRequest.setStatusCode(HTTP_STATUS_CODE.OK_200);

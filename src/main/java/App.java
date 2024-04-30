@@ -10,16 +10,21 @@ import editor.CSVEditor;
 import editor.commands.CommandHistory;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import static com.server.http.enums.HTTP_METHOD.*;
-import static com.server.http.enums.HTTP_STATUS_CODE.CREATED_201;
-import static com.server.http.enums.HTTP_STATUS_CODE.OK_200;
+import static com.server.http.enums.HTTP_STATUS_CODE.*;
 
 @HttpMethods
 @ServerApplication
 public class App {
     private static final CSVApp csvApp = new CSVApp();
+
+    static {
+        CSVEditor editor = new CSVEditor();
+        csvApp.setActiveEditor(editor);
+        CommandHistory history = new CommandHistory();
+        csvApp.setHistory(history);
+    }
 
     public static void main(String[] args) {
         ServerRunnableApplication.run(App.class, args);
@@ -40,44 +45,54 @@ public class App {
 
     @EndpointMapping(uri = "/csv/all", method = GET)
     public static AbstractResponse getAllRecords() throws IOException {
-        CSVEditor editor = new CSVEditor();
-        csvApp.setActiveEditor(editor);
-        CommandHistory history = new CommandHistory();
-        csvApp.setHistory(history);
         csvApp.read();
         return Json.sendResponse(csvApp.convertDataToJson(csvApp.getActiveEditor().getDataList()), OK_200);
     }
 
 
     @EndpointMapping(uri = "/csv/{number}", method = GET)
-    public AbstractResponse getRecordById(@RequestParam("number") String number) throws IOException {
-        CSVEditor editor = new CSVEditor();
-        csvApp.setActiveEditor(editor);
-        CommandHistory history = new CommandHistory();
-        csvApp.setHistory(history);
-        csvApp.read();
-        String[] string = csvApp.getActiveEditor().getDataList().get(Integer.parseInt(number));
-        return Json.sendResponse(Arrays.toString(string), OK_200);
+    public static AbstractResponse getRecordById(@RequestParam("number") String number) {
+        try {
+            csvApp.get(Integer.parseInt(number));
+            return Json.sendResponse(csvApp.convertDataToJson(csvApp.getActiveEditor().getData()), OK_200);
+        } catch (IllegalArgumentException | IOException e){
+            return Json.sendResponse(STR."\{e.getMessage()}", BAD_REQUEST_400);
+        }
     }
 
+    @EndpointMapping(uri = "/csv", method = POST)
+    public static AbstractResponse addRecord(
+            @BodyParam("data") String body
+    ) {
+        try {
+            csvApp.create(new String[]{body});
+            return Json.sendResponse(STR."Data: \{body} was created!", CREATED_201);
+        } catch (IllegalArgumentException | IOException e){
+            return Json.sendResponse(STR."\{e.getMessage()}", BAD_REQUEST_400);
+        }
+    }
 
     @EndpointMapping(uri = "/csv/{number}", method = PUT)
-    public AbstractResponse updateRecord(
+    public static AbstractResponse updateRecord(
             @RequestParam("number") String number,
-            @BodyParam("body") String body
-    ) throws IOException {
-        CSVEditor editor = new CSVEditor();
-        csvApp.setActiveEditor(editor);
-        CommandHistory history = new CommandHistory();
-        csvApp.setHistory(history);
-        csvApp.update(Integer.parseInt(number), new String[]{body});
-        return Html.renderTemplate(STR."<p>Row \{number} was updated! </p>", CREATED_201);
+            @BodyParam("data") String body
+    ) {
+        try {
+            csvApp.update(Integer.parseInt(number), new String[]{body});
+            return Json.sendResponse(STR."Row \{number} was updated!", CREATED_201);
+        } catch (IllegalArgumentException | IOException e){
+            return Json.sendResponse(STR."\{e.getMessage()}", BAD_REQUEST_400);
+        }
     }
 
 
     @EndpointMapping(uri = "/csv/{number}", method = DELETE)
-    public AbstractResponse deleteRecord(@RequestParam("number") String number) throws IOException {
-        String json = "{\"number\":1,\"text\":\"Sample text\",\"time\":\"2022-04-09T12:30:00\"}";
-        return Html.renderTemplate(STR."<p>Row \{number} was deleted! </p>", OK_200);
+    public static AbstractResponse deleteRecord(@RequestParam("number") String number) {
+        try {
+            csvApp.delete(Integer.parseInt(number));
+            return Json.sendResponse(STR."Row \{number} was updated!", CREATED_201);
+        } catch (IllegalArgumentException | IOException e){
+            return Json.sendResponse(STR."\{e.getMessage()}", BAD_REQUEST_400);
+        }
     }
 }

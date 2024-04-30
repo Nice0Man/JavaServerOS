@@ -2,8 +2,10 @@ package editor;
 
 import editor.commands.CommandHistory;
 
+import java.io.IOException;
+
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         // Создаем экземпляр приложения и инициализируем редактор CSV
         CSVApp app = new CSVApp();
         CSVEditor editor = new CSVEditor();

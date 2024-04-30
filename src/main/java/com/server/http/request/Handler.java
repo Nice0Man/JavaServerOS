@@ -55,7 +55,7 @@ public class Handler implements Runnable {
         }
     }
 
-    private static void handleResponse(AbstractResponse response) throws IOException {
+    private static void handleResponse(AbstractResponse response) {
         if (response instanceof Html) {
             if (response.getBytes() != null)
                 handleHtmlResponse((Html) response);
@@ -70,12 +70,12 @@ public class Handler implements Runnable {
         }
     }
 
-    private static void handleJsonResponse(Json response) throws IOException {
+    private static void handleJsonResponse(Json response){
         response.send();
         response.closeSocket();
     }
 
-    private static void handleHtmlResponse(Html response) throws IOException {
+    private static void handleHtmlResponse(Html response){
         response.send();
         response.closeSocket();
     }

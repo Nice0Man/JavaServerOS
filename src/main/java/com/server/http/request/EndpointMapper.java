@@ -57,8 +57,11 @@ public class EndpointMapper {
         }
     }
 
-    public static AbstractResponse handleRequest(String requestUri, HTTP_METHOD httpMethod, String jsonBody)
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
+    public static AbstractResponse handleRequest(
+            String requestUri,
+            HTTP_METHOD httpMethod,
+            String jsonBody
+    ) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
         Method method = findMatchingMethod(requestUri, httpMethod);
         if (method != null) {
             Object[] args = extractArgsFromMethod(requestUri, method, jsonBody);
@@ -157,7 +160,7 @@ public class EndpointMapper {
                     }
                 }
             } else if (bodyParamAnnotation != null) {
-                args.add(RequestHandler.JsonParser.parse(jsonBody, parameter.getType()));
+                args.add(RequestHandler.JsonParser.parse(jsonBody, bodyParamAnnotation.value(), String.class));
             }
         }
         return args.toArray();

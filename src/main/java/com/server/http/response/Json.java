@@ -23,7 +23,7 @@ public class Json extends AbstractResponse {
     }
 
     public Json(Socket socket, HTTP_STATUS_CODE statusCode, String jsonData) throws IOException {
-        super(socket, statusCode, CONTENT_TYPE.TEXT_HTML);
+        super(socket, statusCode, CONTENT_TYPE.APPLICATION_JSON);
         this.bytes = jsonData.getBytes();
     }
 

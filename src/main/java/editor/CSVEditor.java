@@ -15,8 +15,9 @@ import java.util.List;
 public class CSVEditor {
     private static String CSV_FILE_PATH = "src/main/resources/data.csv";
     private List<String[]> dataList;
+    private String[] data;
 
-    public void setDataList(List<String[]> dataList){
+    public void setDataList(List<String[]> dataList) throws IOException {
         if (!dataList.isEmpty()){
             this.dataList = new ArrayList<>(dataList);
         }
@@ -28,7 +29,7 @@ public class CSVEditor {
         dataList.add(new String[]{"Data created at: ".concat(LocalDateTime.now().toString())});
     }
 
-    public void createData(String[] newData) {
+    public void createData(String[] newData) throws IOException {
         if (newData.length == 0){
             throw new IllegalArgumentException("Empty data passed!");
         }
@@ -36,7 +37,7 @@ public class CSVEditor {
         saveToFile();
     }
 
-    public void readData() {
+    public void readData() throws IOException{
         try (Reader reader = new FileReader(CSV_FILE_PATH);
              CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT)) {
             dataList.clear();
@@ -47,41 +48,46 @@ public class CSVEditor {
                 }
                 dataList.add(record.toArray(new String[0]));
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
-    public void updateData(int rowIndex, String[] newData) {
+    public void updateData(int rowIndex, String[] newData) throws IOException {
         if (rowIndex >= 1 && rowIndex < dataList.size()) {
             dataList.set(rowIndex, newData);
             saveToFile();
         } else if (rowIndex == 0){
-            System.out.println("Zero index is private for update operation!");
+            throw new IllegalArgumentException("Zero index is private for update operation!");
         } else {
-            System.out.println("Invalid row index for update operation!");
+            throw new IllegalArgumentException("Invalid row index for update operation!");
         }
     }
 
-    public void deleteData(int rowIndex) {
+    public void deleteData(int rowIndex) throws IOException {
         if (rowIndex >= 1 && rowIndex < dataList.size()) {
             dataList.remove(rowIndex);
             saveToFile();
         } else if (rowIndex == 0){
-            System.out.println("Zero index is private for delete operation!");
+            throw new IllegalArgumentException("Zero index is private for delete operation!");
         } else {
-            System.out.println("Invalid row index for delete operation!");
+            throw new IllegalArgumentException("Invalid row index for delete operation!");
         }
     }
 
-    private void saveToFile() {
+    public void get(int rowIndex) throws IOException{
+        readData();
+        if (rowIndex >= 0 && rowIndex < dataList.size()){
+            data = dataList.get(rowIndex);
+        } else {
+            throw new IllegalArgumentException("Invalid row index for get operation!");
+        }
+    }
+
+    private void saveToFile() throws IOException{
         try (Writer writer = new FileWriter(CSV_FILE_PATH);
              CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT)) {
             for (String[] record : dataList) {
                 csvPrinter.printRecord((Object[]) record);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }
