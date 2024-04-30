@@ -16,26 +16,35 @@ import java.text.SimpleDateFormat;
 @NoArgsConstructor(force = true)
 public abstract class AbstractResponse {
     private Socket socket;
-    private HTTP_STATUS_CODE statusCode;
 
+    protected HTTP_STATUS_CODE statusCode;
     protected static final String CRLF = "\r\n";
     protected HttpHeader headers;
     protected String body;
+    protected byte[] bytes;
 
-    protected AbstractResponse(Socket socket, HTTP_STATUS_CODE statusCode, CONTENT_TYPE... contentTypes) throws IOException {
+    protected AbstractResponse(Socket socket, HTTP_STATUS_CODE statusCode){
         this.socket = socket;
         this.statusCode = statusCode;
+    }
+
+    protected AbstractResponse(Socket socket, HTTP_STATUS_CODE statusCode, CONTENT_TYPE... contentTypes) throws IOException {
+        this(socket,statusCode);
         setHeaders(contentTypes);
     }
 
     protected AbstractResponse(Socket socket, HTTP_STATUS_CODE statusCode, HttpHeader headers) throws IOException {
-        this.socket = socket;
-        this.statusCode = statusCode;
+        this(socket,statusCode);
         if (headers != null){
             this.headers = headers;
         } else {
             setHeaders(CONTENT_TYPE.TEXT_HTML,CONTENT_TYPE.APPLICATION_JSON);
         }
+    }
+
+    protected AbstractResponse(Socket socket, HTTP_STATUS_CODE statusCode, HttpHeader headers, byte[] bytes) throws IOException {
+        this(socket, statusCode,headers);
+        this.bytes = bytes;
     }
 
     protected void setHeaders(CONTENT_TYPE... contentTypes) {
@@ -73,13 +82,15 @@ public abstract class AbstractResponse {
         outputStream.flush();
     }
 
-    protected void closeSocket() {
+    public void closeSocket() {
         try {
             socket.close();
         } catch (IOException e) {
             e.printStackTrace(System.err);
         }
     }
+
+    protected abstract void sendResponse(DataOutputStream outputStream) throws IOException;
 
     public abstract void send();
 }

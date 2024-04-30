@@ -14,32 +14,42 @@ import java.net.Socket;
 @Getter
 @Setter
 public class Json extends AbstractResponse {
-    private final String jsonData;
+//    private final String jsonData;
     private ObjectMapper objectMapper;
 
     public Json(String data){
         objectMapper = new ObjectMapper();
-        jsonData = data;
+        bytes = data.getBytes();
     }
 
     public Json(Socket socket, HTTP_STATUS_CODE statusCode, String jsonData) throws IOException {
         super(socket, statusCode, CONTENT_TYPE.TEXT_HTML);
-        this.jsonData = jsonData;
+        this.bytes = jsonData.getBytes();
     }
 
     public Json(Json other) throws IOException {
         super(other.getSocket(), other.getStatusCode(), other.getHeaders());
-        jsonData = other.jsonData;
+        bytes = other.bytes;
+    }
+
+    public Json(String data, HTTP_STATUS_CODE httpStatusCode) {
+        this(data);
+        this.setStatusCode(httpStatusCode);
     }
 
     public static AbstractResponse sendResponse(String data) throws IOException {
         return new Json(data);
     }
 
+    public static AbstractResponse sendResponse(String data, HTTP_STATUS_CODE httpStatusCode) {
+        return new Json(data, httpStatusCode);
+    }
+
+    @Override
     public void sendResponse(DataOutputStream outputStream) throws IOException {
         setHeaders(CONTENT_TYPE.APPLICATION_JSON);
         writeHeaders(outputStream);
-        writeBody(outputStream, jsonData.getBytes());
+        writeBody(outputStream, bytes);
         flush(outputStream);
     }
 
@@ -50,7 +60,7 @@ public class Json extends AbstractResponse {
     public void send() {
         try {
             DataOutputStream outputStream = new DataOutputStream(getSocket().getOutputStream());
-            if (getJsonData() != null) {
+            if (bytes != null) {
                 sendResponse(outputStream);
             } else {
                 setStatusCode(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR_500);
@@ -60,5 +70,4 @@ public class Json extends AbstractResponse {
             e.printStackTrace(System.err);
         }
     }
-
 }

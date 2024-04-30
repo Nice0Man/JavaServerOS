@@ -9,13 +9,12 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 
+import static com.server.http.enums.HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR_500;
+
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class Html extends AbstractResponse {
-    private HTTP_STATUS_CODE statusCode;
-    private byte[] bytes;
-
     public Html(HTTP_STATUS_CODE code){
         this.statusCode = code;
     }
@@ -25,7 +24,7 @@ public class Html extends AbstractResponse {
     }
 
     public Html(Html other) throws IOException {
-        super(other.getSocket(), other.getStatusCode(), other.getHeaders());
+        super(other.getSocket(), other.getStatusCode(), other.getHeaders(), other.getBytes());
     }
 
     public Html(HTTP_STATUS_CODE code, String s) {
@@ -41,19 +40,17 @@ public class Html extends AbstractResponse {
         return new Html(HTTP_STATUS_CODE.OK_200, s);
     }
 
-    public void sendResponse(DataOutputStream outputStream) throws IOException {
+    public static AbstractResponse renderTemplate(String s, HTTP_STATUS_CODE httpStatusCode) throws IOException {
+        return new Html(httpStatusCode, s);
+    }
+
+    @Override
+    protected void sendResponse(DataOutputStream outputStream) throws IOException {
         setHeaders(CONTENT_TYPE.TEXT_HTML);
         writeHeaders(outputStream);
         writeBody(outputStream, bytes);
         flush(outputStream);;
     }
-
-    public void sendError(DataOutputStream outputStream,HTTP_STATUS_CODE httpStatusCode) throws IOException {
-        String template = STR."<h1> \{httpStatusCode}</h1>";
-        setBytes(template.getBytes());
-        sendResponse(outputStream);
-    }
-
     /**
      *
      */
@@ -64,8 +61,8 @@ public class Html extends AbstractResponse {
             if (getBytes() != null) {
                 sendResponse(outputStream);
             } else {
-                setStatusCode(HTTP_STATUS_CODE.INTERNAL_SERVER_ERROR_500);
-                String template = "<html><body><h1>Page Not Found</h1></body></html>";
+                setStatusCode(INTERNAL_SERVER_ERROR_500);
+                String template = STR."<html><body><h1>\{INTERNAL_SERVER_ERROR_500}</h1></body></html>";
                 setBytes(template.getBytes());
                 sendResponse(outputStream);
             }

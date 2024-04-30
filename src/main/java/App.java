@@ -1,7 +1,6 @@
 import com.server.app.ServerRunnableApplication;
 import com.server.app.annotation.ServerApplication;
 
-import com.server.http.enums.RESPONSE_TYPE;
 import com.server.http.request.annotations.*;
 import com.server.http.response.AbstractResponse;
 import com.server.http.response.Html;
@@ -14,8 +13,8 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import static com.server.http.enums.HTTP_METHOD.*;
-import static com.server.http.enums.RESPONSE_TYPE.HTML;
-import static com.server.http.enums.RESPONSE_TYPE.JSON;
+import static com.server.http.enums.HTTP_STATUS_CODE.CREATED_201;
+import static com.server.http.enums.HTTP_STATUS_CODE.OK_200;
 
 @HttpMethods
 @ServerApplication
@@ -46,42 +45,39 @@ public class App {
         CommandHistory history = new CommandHistory();
         csvApp.setHistory(history);
         csvApp.read();
-        return Json.sendResponse(csvApp.convertDataToJson(csvApp.getActiveEditor().getDataList()));
+        return Json.sendResponse(csvApp.convertDataToJson(csvApp.getActiveEditor().getDataList()), OK_200);
     }
 
 
-    @EndpointMapping(uri = "/csv/{id}", method = GET)
-    public AbstractResponse getRecordById(@RequestParam("id") String id) throws IOException {
+    @EndpointMapping(uri = "/csv/{number}", method = GET)
+    public AbstractResponse getRecordById(@RequestParam("number") String number) throws IOException {
         CSVEditor editor = new CSVEditor();
         csvApp.setActiveEditor(editor);
         CommandHistory history = new CommandHistory();
         csvApp.setHistory(history);
         csvApp.read();
-        int number = Integer.parseInt(id);
-        String[] string = csvApp.getActiveEditor().getDataList().get(number);
-        return Json.sendResponse(Arrays.toString(string));
+        String[] string = csvApp.getActiveEditor().getDataList().get(Integer.parseInt(number));
+        return Json.sendResponse(Arrays.toString(string), OK_200);
     }
 
 
-    @EndpointMapping(uri = "/csv/{id}", method = PUT)
+    @EndpointMapping(uri = "/csv/{number}", method = PUT)
     public AbstractResponse updateRecord(
-            @RequestParam("id") String id,
+            @RequestParam("number") String number,
             @BodyParam("body") String body
     ) throws IOException {
         CSVEditor editor = new CSVEditor();
         csvApp.setActiveEditor(editor);
         CommandHistory history = new CommandHistory();
         csvApp.setHistory(history);
-        int number = Integer.parseInt(id);
-        csvApp.update(number, new String[]{body});
-        return Html.renderTemplate(STR."<p>Row \{id} was updated! </p>");
+        csvApp.update(Integer.parseInt(number), new String[]{body});
+        return Html.renderTemplate(STR."<p>Row \{number} was updated! </p>", CREATED_201);
     }
 
 
-    @EndpointMapping(uri = "/csv/{id}", method = DELETE)
-    public AbstractResponse deleteRecord(@RequestParam("id") String id) throws IOException {
-
-        String json = "{\"id\":1,\"text\":\"Sample text\",\"time\":\"2022-04-09T12:30:00\"}";
-        return Json.sendResponse(json);
+    @EndpointMapping(uri = "/csv/{number}", method = DELETE)
+    public AbstractResponse deleteRecord(@RequestParam("number") String number) throws IOException {
+        String json = "{\"number\":1,\"text\":\"Sample text\",\"time\":\"2022-04-09T12:30:00\"}";
+        return Html.renderTemplate(STR."<p>Row \{number} was deleted! </p>", OK_200);
     }
 }

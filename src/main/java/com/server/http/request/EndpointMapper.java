@@ -1,13 +1,11 @@
 package com.server.http.request;
 
 import com.server.http.enums.HTTP_METHOD;
-import com.server.http.enums.HTTP_STATUS_CODE;
 import com.server.http.request.annotations.BodyParam;
 import com.server.http.request.annotations.EndpointMapping;
 import com.server.http.request.annotations.RequestParam;
+import com.server.http.request.annotations.Template;
 import com.server.http.response.AbstractResponse;
-import com.server.http.response.Html;
-import com.server.http.response.Json;
 import lombok.Data;
 import lombok.Setter;
 
@@ -59,42 +57,51 @@ public class EndpointMapper {
         }
     }
 
-    public static void handleRequest(Socket socket, String requestUri, HTTP_METHOD httpMethod, String jsonBody)
+    public static AbstractResponse handleRequest(String requestUri, HTTP_METHOD httpMethod, String jsonBody)
             throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, IOException {
         Method method = findMatchingMethod(requestUri, httpMethod);
         if (method != null) {
             Object[] args = extractArgsFromMethod(requestUri, method, jsonBody);
             AbstractResponse response = (AbstractResponse) method.invoke(null, args);
             if (response != null) {
-                setResponseParameters(response, socket);
-                handleResponse(response);
+                byte[] bytes = matchesTemplate(method);
+                if (bytes != null){
+                    response.setBytes(bytes);
+                }
+                return response;
             }
         } else {
             throw new NoSuchMethodException(STR."Endpoint not found for request URI: \{requestUri}");
         }
+        return null;
     }
 
-    private static void handleResponse(AbstractResponse response) throws IOException {
-        if (response instanceof Html) {
-            handleHtmlResponse((Html) response);
-        } else if (response instanceof Json) {
-            handleJsonResponse((Json) response);
+    private static byte[] readFileBytes(File file) throws IOException {
+        int length = (int) file.length();
+        byte[] bytes = new byte[length];
+        try (InputStream inputStream = new FileInputStream(file)) {
+            int offset = 0;
+            while (offset < length) {
+                int count = inputStream.read(bytes, offset, (length - offset));
+                if (count >= 0) {
+                    offset += count;
+                } else {
+                    throw new IOException("Unexpected end of file");
+                }
+            }
         }
+        return bytes;
     }
 
-    private static void handleJsonResponse(Json response) throws IOException {
-        DataOutputStream outputStream = new DataOutputStream(response.getSocket().getOutputStream());
-        response.sendResponse(outputStream);
-    }
-
-    private static void handleHtmlResponse(Html response) throws IOException {
-        DataOutputStream outputStream = new DataOutputStream(response.getSocket().getOutputStream());
-        response.sendResponse(outputStream);
-    }
-
-    private static void setResponseParameters(AbstractResponse response, Socket socket) {
-        response.setSocket(socket);
-        response.setStatusCode(HTTP_STATUS_CODE.OK_200);
+    private static byte[] matchesTemplate(Method method) throws IOException {
+        Template templateAnnotation = method.getAnnotation(Template.class);
+        if (templateAnnotation != null){
+            File file = new File(STR."src/main/resources/template/\{templateAnnotation.path()}");
+            if (file.exists()) {
+                return readFileBytes(file);
+            }
+        }
+        return null;
     }
 
     private static Method findMatchingMethod(String requestUri, HTTP_METHOD httpMethod) throws NoSuchMethodException {
